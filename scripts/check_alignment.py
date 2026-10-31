@@ -12,8 +12,8 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 errors = []
-manifest = json.loads((ROOT / 'references/source-manifest.json').read_text())
-profile = json.loads((ROOT / 'references/dataset-profile.json').read_text())
+manifest = json.loads((ROOT / 'references/source-manifest.json').read_text(encoding='utf-8'))
+profile = json.loads((ROOT / 'references/dataset-profile.json').read_text(encoding='utf-8'))
 required = [
     'AGENTS.md', 'CLAUDE.md', 'README.md', 'docs/challenge-2-requirements.md',
     'docs/judging-rubric.md', 'docs/datasets.md',
@@ -47,7 +47,7 @@ for entry in manifest['sources']:
         lookups[entry['id']] = {r['IATA_CODE'] for r in rows}
         if len(rows) != len(lookups[entry['id']]):
             errors.append(f'Duplicate lookup keys: {entry["id"]}')
-        md = (ROOT / f'docs/data/{path.stem}.md').read_text()
+        md = (ROOT / f'docs/data/{path.stem}.md').read_text(encoding='utf-8')
         markdown_rows = [line for line in md.splitlines() if line.startswith('| ')][2:]
         def cell(value):
             return str(value).replace('\\', '\\\\').replace('|', '\\|').replace('\r', '').replace('\n', '<br>')
@@ -60,9 +60,9 @@ counts = Counter()
 months = Counter()
 missing = Counter()
 selected_rows = {}
-scenario_md = (ROOT / 'docs/data/flight-scenarios.md').read_text()
+scenario_md = (ROOT / 'docs/data/flight-scenarios.md').read_text(encoding='utf-8')
 example_ids = {int(n) for n in re.findall(r'### [^\n]+: CSV row (\d+)', scenario_md)}
-architecture_fixture = json.loads((ROOT / 'docs/examples/coordination-scenario-v1.json').read_text())
+architecture_fixture = json.loads((ROOT / 'docs/examples/coordination-scenario-v1.json').read_text(encoding='utf-8'))
 architecture_sources = architecture_fixture['shared']['source_rows']
 architecture_row_ids = {row['csv_row_number'] for row in architecture_sources}
 with (ROOT / f_entry['path']).open(encoding='utf-8-sig', newline='') as stream:
@@ -113,7 +113,7 @@ for row_number in example_ids:
 for row in architecture_sources:
     if row['dataset_sha256'] != f_entry['sha256'] or selected_rows.get(row['csv_row_number']) != row['raw']:
         errors.append(f'Architecture fixture source differs from real CSV row {row["csv_row_number"]}')
-architecture = (ROOT / 'docs/ai-orchestration-architecture.md').read_text()
+architecture = (ROOT / 'docs/ai-orchestration-architecture.md').read_text(encoding='utf-8')
 for block in re.findall(r'```python\n(.*?)\n```', architecture, re.S):
     try:
         ast.parse(block)
@@ -134,8 +134,8 @@ for path in md_files:
         if local and not (path.parent / local).resolve().is_file():
             errors.append(f'Broken local link in {path.relative_to(ROOT)}: {target}')
 
-requirements = (ROOT / 'docs/challenge-2-requirements.md').read_text()
-matrix = (ROOT / 'docs/alignment-checklist.md').read_text()
+requirements = (ROOT / 'docs/challenge-2-requirements.md').read_text(encoding='utf-8')
+matrix = (ROOT / 'docs/alignment-checklist.md').read_text(encoding='utf-8')
 defined = set(re.findall(r'^\| (C2-\d{2}) \|', requirements, flags=re.M))
 expected = {f'C2-{i:02d}' for i in range(1,27)}
 if defined != expected:
@@ -143,7 +143,7 @@ if defined != expected:
 for rid in expected:
     if rid not in matrix:
         errors.append(f'Requirement absent from alignment matrix: {rid}')
-rubric = (ROOT / 'docs/judging-rubric.md').read_text()
+rubric = (ROOT / 'docs/judging-rubric.md').read_text(encoding='utf-8')
 weights = [int(x) for x in re.findall(r'^\| JR-\d{2} \| [^|]+ \| (\d+)%',rubric,flags=re.M)]
 if weights != [20,25,20,20,10,5] or sum(weights) != 100:
     errors.append('Official rubric weights differ from source transcription')
@@ -153,7 +153,7 @@ for i in range(1,7):
 
 secret = re.compile(r'(?:gh[pousr]_[A-Za-z0-9]{25,}|sk-[A-Za-z0-9]{25,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)')
 for path in md_files:
-    if secret.search(path.read_text()):
+    if secret.search(path.read_text(encoding='utf-8')):
         errors.append(f'Potential credential in {path.relative_to(ROOT)}')
 for nested in ROOT.rglob('.git'):
     if nested != ROOT / '.git':
