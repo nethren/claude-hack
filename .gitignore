@@ -8,3 +8,4 @@ __pycache__/
 node_modules/
 .local/
 logs/
+.pytest_cache/

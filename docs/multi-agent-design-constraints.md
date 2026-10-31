@@ -24,7 +24,7 @@ a traceable shared input envelope. Add domain-specific context separately. Do
 not pretend that fuel or gate data is present in the CSVs, and do not withhold
 required common row parameters merely to manufacture disagreement.
 
-## Proposed topology (not yet implemented)
+## Topology (backend implemented; live evaluation pending)
 
 The [protocol 1.0 architecture](ai-orchestration-architecture.md) specifies a
 deterministic coordinator plus three LLM domain agents, using direct async Python
