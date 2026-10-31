@@ -20,6 +20,9 @@ and a data check is not evidence that the application works.
 | DEC-11 | User-authorized implementation | Pull teammates' code and implement/test the backend on branch `coordinator` before frontend work. Merge Pilot 834f8da and Ground 690a957, preserving their history/interfaces. |
 | DEC-12 | User-authorized compatible ATC | No ATC branch was available; user requested a compatible reference implementation. Keep ownership/provenance visible so the teammate can replace/review it through the same interface. |
 | DEC-13 | Adopted integration setting | Match the merged adapters' 1,600 output-token cap; retain two rounds/six generation attempts, zero retries and existing deadlines. Live token counting enforces the complete 8,000-token prompt cap. |
+| DEC-14 | User-confirmed frontend draft | React + Vite, interactive code-first draft, airport surface radar with moving aircraft, highlighted proposed routes, airport conditions and three understandable agent reviews. Isolated on `codex/frontend-draft`. |
+| DEC-15 | Adopted presentation/data boundary | Use cached attributed OpenStreetMap DFW geometry. Backend lacks geographic routing/position data; simulation stands, geographic route mapping and aircraft motion are explicit illustrative overlays, not airport clearances. |
+| DEC-16 | Adopted evidence boundary | The existing API returns completed runs, so show pending while connected work runs and replay recorded original events afterward. Never manufacture live per-agent progress or private chain-of-thought. |
 
 ## Proposed designs, not final implementation commitments
 
@@ -170,6 +173,14 @@ The deterministic fallback picks the same P1 as the offline negotiation under
 the default scenario; no superiority over the baseline is claimed.
 
 ## Entry template for later decisions
+
+Frontend implementation and C2/JR/data alignment are documented in
+[frontend review notes](frontend-review.md), [product context](../PRODUCT.md),
+[visual system](../DESIGN.md) and [frontend run guide](../frontend/README.md).
+Recorded default, crew-delay and no-runway cases come from actual coordinator
+runs with explicitly scripted decisions and zero model generations. Their
+original reports/messages remain exportable. Provider keys stay on the server;
+the frontend uses the existing local API without changing agent contracts.
 
 ```text
 Decision ID / date / status:

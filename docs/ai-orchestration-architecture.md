@@ -1,6 +1,6 @@
 # AI orchestration architecture and teammate integration contract
 
-Version **1.0** | 2026-10-31 | Status: **backend implemented and tested offline on `coordinator`; live models and frontend pending**.
+Version **1.0** | 2026-10-31 | Status: **backend implemented/tested offline; frontend draft on `codex/frontend-draft`; live evaluation pending**.
 
 For a short plain-language overview, read [Architecture explained simply](architecture-explained.md).
 
@@ -730,7 +730,9 @@ Provider selection is a gateway setting; it is not hard-coded in domain modules.
 Optional keyword settings select budgets, log directory and the committed source
 root. `runtime/models.py` defines the result, including additive candidate reports
 for the deterministic comparison endpoint. CLI and local HTTP entry points are
-`app.py` and `api.py`; no frontend is implemented. A persisted revision index
+`app.py` and `api.py`. A separate [frontend review draft](frontend-review.md) now
+consumes this API without changing the agent contracts; it does not claim live
+event streaming or actual aircraft telemetry. A persisted revision index
 rejects changed data reusing an existing scenario ID/version. Identical revision
 replays start fresh run IDs and cannot reuse previous votes.
 

@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T06:41:32.261705+00:00",
+  "title": "Design System: Groundline frontend draft",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Desk charcoal",
+        "tonalRamp": [
+          "oklch(15.00% 0.01448 220.38)",
+          "oklch(26.43% 0.01448 220.38)",
+          "oklch(37.86% 0.01448 220.38)",
+          "oklch(49.29% 0.01448 220.38)",
+          "oklch(60.71% 0.01448 220.38)",
+          "oklch(72.14% 0.01448 220.38)",
+          "oklch(83.57% 0.01448 220.38)",
+          "oklch(95.00% 0.01448 220.38)"
+        ]
+      },
+      "map": {
+        "role": "neutral",
+        "displayName": "Map charcoal",
+        "tonalRamp": [
+          "oklch(15.00% 0.01791 215.03)",
+          "oklch(26.43% 0.01791 215.03)",
+          "oklch(37.86% 0.01791 215.03)",
+          "oklch(49.29% 0.01791 215.03)",
+          "oklch(60.71% 0.01791 215.03)",
+          "oklch(72.14% 0.01791 215.03)",
+          "oklch(83.57% 0.01791 215.03)",
+          "oklch(95.00% 0.01791 215.03)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Off-white",
+        "tonalRamp": [
+          "oklch(15.00% 0.00915 161.35)",
+          "oklch(26.43% 0.00915 161.35)",
+          "oklch(37.86% 0.00915 161.35)",
+          "oklch(49.29% 0.00915 161.35)",
+          "oklch(60.71% 0.00915 161.35)",
+          "oklch(72.14% 0.00915 161.35)",
+          "oklch(83.57% 0.00915 161.35)",
+          "oklch(95.00% 0.00915 161.35)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted green-grey",
+        "tonalRamp": [
+          "oklch(15.00% 0.02305 182.29)",
+          "oklch(26.43% 0.02305 182.29)",
+          "oklch(37.86% 0.02305 182.29)",
+          "oklch(49.29% 0.02305 182.29)",
+          "oklch(60.71% 0.02305 182.29)",
+          "oklch(72.14% 0.02305 182.29)",
+          "oklch(83.57% 0.02305 182.29)",
+          "oklch(95.00% 0.02305 182.29)"
+        ]
+      },
+      "quiet": {
+        "role": "neutral",
+        "displayName": "Quiet green-grey",
+        "tonalRamp": [
+          "oklch(15.00% 0.02413 186.17)",
+          "oklch(26.43% 0.02413 186.17)",
+          "oklch(37.86% 0.02413 186.17)",
+          "oklch(49.29% 0.02413 186.17)",
+          "oklch(60.71% 0.02413 186.17)",
+          "oklch(72.14% 0.02413 186.17)",
+          "oklch(83.57% 0.02413 186.17)",
+          "oklch(95.00% 0.02413 186.17)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Ruled green-grey",
+        "tonalRamp": [
+          "oklch(15.00% 0.01761 207.85)",
+          "oklch(26.43% 0.01761 207.85)",
+          "oklch(37.86% 0.01761 207.85)",
+          "oklch(49.29% 0.01761 207.85)",
+          "oklch(60.71% 0.01761 207.85)",
+          "oklch(72.14% 0.01761 207.85)",
+          "oklch(83.57% 0.01761 207.85)",
+          "oklch(95.00% 0.01761 207.85)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Warm lime",
+        "tonalRamp": [
+          "oklch(15.00% 0.11857 119.31)",
+          "oklch(26.43% 0.11857 119.31)",
+          "oklch(37.86% 0.11857 119.31)",
+          "oklch(49.29% 0.11857 119.31)",
+          "oklch(60.71% 0.11857 119.31)",
+          "oklch(72.14% 0.11857 119.31)",
+          "oklch(83.57% 0.11857 119.31)",
+          "oklch(95.00% 0.11857 119.31)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Lighter lime hover",
+        "tonalRamp": [
+          "oklch(15.00% 0.09034 118.77)",
+          "oklch(26.43% 0.09034 118.77)",
+          "oklch(37.86% 0.09034 118.77)",
+          "oklch(49.29% 0.09034 118.77)",
+          "oklch(60.71% 0.09034 118.77)",
+          "oklch(72.14% 0.09034 118.77)",
+          "oklch(83.57% 0.09034 118.77)",
+          "oklch(95.00% 0.09034 118.77)"
+        ]
+      },
+      "action-ink": {
+        "role": "primary",
+        "displayName": "Action ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.02986 146.63)",
+          "oklch(26.43% 0.02986 146.63)",
+          "oklch(37.86% 0.02986 146.63)",
+          "oklch(49.29% 0.02986 146.63)",
+          "oklch(60.71% 0.02986 146.63)",
+          "oklch(72.14% 0.02986 146.63)",
+          "oklch(83.57% 0.02986 146.63)",
+          "oklch(95.00% 0.02986 146.63)"
+        ]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Muted mint",
+        "tonalRamp": [
+          "oklch(15.00% 0.06345 160.54)",
+          "oklch(26.43% 0.06345 160.54)",
+          "oklch(37.86% 0.06345 160.54)",
+          "oklch(49.29% 0.06345 160.54)",
+          "oklch(60.71% 0.06345 160.54)",
+          "oklch(72.14% 0.06345 160.54)",
+          "oklch(83.57% 0.06345 160.54)",
+          "oklch(95.00% 0.06345 160.54)"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Warm amber",
+        "tonalRamp": [
+          "oklch(15.00% 0.08663 70.63)",
+          "oklch(26.43% 0.08663 70.63)",
+          "oklch(37.86% 0.08663 70.63)",
+          "oklch(49.29% 0.08663 70.63)",
+          "oklch(60.71% 0.08663 70.63)",
+          "oklch(72.14% 0.08663 70.63)",
+          "oklch(83.57% 0.08663 70.63)",
+          "oklch(95.00% 0.08663 70.63)"
+        ]
+      },
+      "rose": {
+        "role": "secondary",
+        "displayName": "Soft rose",
+        "tonalRamp": [
+          "oklch(15.00% 0.08623 28.94)",
+          "oklch(26.43% 0.08623 28.94)",
+          "oklch(37.86% 0.08623 28.94)",
+          "oklch(49.29% 0.08623 28.94)",
+          "oklch(60.71% 0.08623 28.94)",
+          "oklch(72.14% 0.08623 28.94)",
+          "oklch(83.57% 0.08623 28.94)",
+          "oklch(95.00% 0.08623 28.94)"
+        ]
+      },
+      "map-grid": {
+        "role": "neutral",
+        "displayName": "Grid green-grey",
+        "tonalRamp": [
+          "oklch(15.00% 0.02115 215.98)",
+          "oklch(26.43% 0.02115 215.98)",
+          "oklch(37.86% 0.02115 215.98)",
+          "oklch(49.29% 0.02115 215.98)",
+          "oklch(60.71% 0.02115 215.98)",
+          "oklch(72.14% 0.02115 215.98)",
+          "oklch(83.57% 0.02115 215.98)",
+          "oklch(95.00% 0.02115 215.98)"
+        ]
+      },
+      "raised-surface": {
+        "role": "neutral",
+        "displayName": "Raised surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.01982 212.39)",
+          "oklch(26.43% 0.01982 212.39)",
+          "oklch(37.86% 0.01982 212.39)",
+          "oklch(49.29% 0.01982 212.39)",
+          "oklch(60.71% 0.01982 212.39)",
+          "oklch(72.14% 0.01982 212.39)",
+          "oklch(83.57% 0.01982 212.39)",
+          "oklch(95.00% 0.01982 212.39)"
+        ]
+      },
+      "review-surface": {
+        "role": "neutral",
+        "displayName": "Review surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.01865 179.03)",
+          "oklch(26.43% 0.01865 179.03)",
+          "oklch(37.86% 0.01865 179.03)",
+          "oklch(49.29% 0.01865 179.03)",
+          "oklch(60.71% 0.01865 179.03)",
+          "oklch(72.14% 0.01865 179.03)",
+          "oklch(83.57% 0.01865 179.03)",
+          "oklch(95.00% 0.01865 179.03)"
+        ]
+      },
+      "selected-surface": {
+        "role": "neutral",
+        "displayName": "Selected surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.01696 183.70)",
+          "oklch(26.43% 0.01696 183.70)",
+          "oklch(37.86% 0.01696 183.70)",
+          "oklch(49.29% 0.01696 183.70)",
+          "oklch(60.71% 0.01696 183.70)",
+          "oklch(72.14% 0.01696 183.70)",
+          "oklch(83.57% 0.01696 183.70)",
+          "oklch(95.00% 0.01696 183.70)"
+        ]
+      },
+      "agreement-surface": {
+        "role": "neutral",
+        "displayName": "Agreement surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.02159 176.26)",
+          "oklch(26.43% 0.02159 176.26)",
+          "oklch(37.86% 0.02159 176.26)",
+          "oklch(49.29% 0.02159 176.26)",
+          "oklch(60.71% 0.02159 176.26)",
+          "oklch(72.14% 0.02159 176.26)",
+          "oklch(83.57% 0.02159 176.26)",
+          "oklch(95.00% 0.02159 176.26)"
+        ]
+      },
+      "escalation-surface": {
+        "role": "neutral",
+        "displayName": "Escalation surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.01604 58.93)",
+          "oklch(26.43% 0.01604 58.93)",
+          "oklch(37.86% 0.01604 58.93)",
+          "oklch(49.29% 0.01604 58.93)",
+          "oklch(60.71% 0.01604 58.93)",
+          "oklch(72.14% 0.01604 58.93)",
+          "oklch(83.57% 0.01604 58.93)",
+          "oklch(95.00% 0.01604 58.93)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Airport surface heading",
+        "purpose": "Main workspace heading; 16px on narrow screens."
+      },
+      "title": {
+        "displayName": "Coordination title",
+        "purpose": "Coordination and stage headings."
+      },
+      "body": {
+        "displayName": "Agent reason",
+        "purpose": "Operational explanation; 13px and 68ch maximum when stacked."
+      },
+      "label": {
+        "displayName": "Supporting label",
+        "purpose": "Compact condition and section metadata."
+      },
+      "flight": {
+        "displayName": "Flight identity",
+        "purpose": "Selected flight ID; CSS specifies 500 while bundled Mono is 400."
+      },
+      "measurement": {
+        "displayName": "Measurement",
+        "purpose": "Numeric outcome values; playback and tags use smaller local sizes."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ui-transition",
+        "value": "160ms cubic-bezier(.23,1,.32,1)",
+        "purpose": "Color, background and border transitions; reduced-motion duration is 0ms."
+      },
+      {
+        "name": "aircraft-simulation",
+        "value": "linear path-distance interpolation via requestAnimationFrame",
+        "purpose": "Default 20×, optional 10×/40×; pause/scrub; stop at stand, retire track at gate_out_min without outbound motion."
+      },
+      {
+        "name": "replay-pacing",
+        "value": "phases: 0, 600, 2000, 3800, 5100, 7700ms; confirmations: 5650, 6350, 7000ms",
+        "purpose": "Presentation timing over recorded events, never live model latency."
+      },
+      {
+        "name": "record-reveal",
+        "value": "scrollIntoView: smooth; reduced motion: instant",
+        "purpose": "Bring the same inline evidence record into view from desktop or mobile entry."
+      },
+      {
+        "name": "selected-route-light",
+        "value": "SVG Gaussian blur stdDeviation=3; 8-unit stroke; opacity .2",
+        "purpose": "Selected proposed route illumination; no panel shadow."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-min",
+        "value": "1600px"
+      },
+      {
+        "name": "compact-max",
+        "value": "1240px"
+      },
+      {
+        "name": "stack-max",
+        "value": "980px"
+      },
+      {
+        "name": "mobile-max",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary coordination action",
+      "kind": "button",
+      "description": "Source-dependent replay/run action; static preview text does not run coordination.",
+      "html": "<button class=\"ds-primary\">Replay coordination<svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg></button>",
+      "css": ".ds-primary{font-family:'IBM Plex Sans',sans-serif;transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--accent,#d8ed91);color:#243225;font-size:12px;font-weight:500;border:0;border-radius:5px;padding:12px 16px;min-height:40px;cursor:pointer}.ds-primary svg{margin-left:9px}.ds-primary:disabled{opacity:.7;cursor:default}.ds-primary:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-primary:hover{background:#e6f6b1}}@media(prefers-reduced-motion:reduce){.ds-primary{transition-duration:0ms}}",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "Local human review",
+      "kind": "button",
+      "description": "Marks review only in the draft; it sends no airport instruction.",
+      "html": "<button class=\"ds-review\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m20 6-11 11-5-5\"/></svg>Mark recommendation reviewed</button>",
+      "css": ".ds-review{font-family:'IBM Plex Sans',sans-serif;transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 5px;font-size:11px;color:#dbe7c8;background:#1d2a27;border:1px solid #526046;border-radius:5px;cursor:pointer}.ds-review:disabled{opacity:.45;cursor:default}.ds-review.ds-reviewed{border-color:#34483d;color:var(--mint,#a6d7bc)}.ds-review:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-review:hover:enabled{background:#2b3a2e}}@media(prefers-reduced-motion:reduce){.ds-review{transition-duration:0ms}}",
+      "refersTo": "button-review"
+    },
+    {
+      "name": "Decision record entry",
+      "kind": "button",
+      "description": "Header action on desktop; labelled panel-footer entry at 980px and below.",
+      "html": "<button class=\"ds-record\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>Decision record<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button>",
+      "css": ".ds-record{font-family:'IBM Plex Sans',sans-serif;transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:7px 0;background:transparent;border:0;color:var(--muted,#96aaa6);font-size:12px;cursor:pointer}.ds-record.ds-active{color:var(--accent,#d8ed91)}.ds-record:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-record:hover{color:var(--text,#e7eeea)}}@media(prefers-reduced-motion:reduce){.ds-record{transition-duration:0ms}}",
+      "refersTo": "button-text"
+    },
+    {
+      "name": "Coordination source field",
+      "kind": "input",
+      "description": "Native select inside the connection settings disclosure. No text-entry field exists.",
+      "html": "<select class=\"ds-source\" aria-label=\"Coordination source\"><option>Recorded demo</option><option>Connected backend</option></select>",
+      "css": ".ds-source{font-family:'IBM Plex Sans',sans-serif;transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);width:100%;color:var(--text,#e7eeea);background:var(--bg,#10191c);padding:9px;border:1px solid #405153;border-radius:5px;font-size:12px;cursor:pointer}.ds-source:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(prefers-reduced-motion:reduce){.ds-source{transition-duration:0ms}}",
+      "refersTo": "source-select"
+    },
+    {
+      "name": "Header context",
+      "kind": "nav",
+      "description": "Compact brand/home, airport and active surface context; this is a header rather than a separate navigation menu.",
+      "html": "<div class=\"ds-header\"><a class=\"ds-brand\" href=\"/\">groundline<span>.</span></a><span class=\"ds-divider\"></span><strong>DFW</strong><span class=\"ds-airport\">Dallas Fort Worth International</span><span class=\"ds-surface\">Surface coordination</span></div>",
+      "css": ".ds-header{font-family:'IBM Plex Sans',sans-serif;height:64px;display:flex;align-items:center;gap:23px;padding:0 30px;border-bottom:1px solid var(--line,#2a3739);background:var(--bg,#10191c);color:var(--text,#e7eeea)}.ds-brand{transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);color:inherit;font-size:22px;font-weight:500;letter-spacing:-.7px;text-decoration:none}.ds-brand span{color:var(--accent,#d8ed91)}.ds-divider{height:26px;width:1px;background:var(--line,#2a3739)}.ds-header strong{font-family:var(--mono,'IBM Plex Mono',monospace);font-size:14px;font-weight:500}.ds-airport{font-size:12px;color:var(--muted,#96aaa6)}.ds-surface{display:flex;align-items:center;height:64px;border-bottom:2px solid var(--accent,#d8ed91);font-size:12px}.ds-brand:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(max-width:1240px){.ds-surface{display:none}}@media(max-width:980px){.ds-airport{display:none}}@media(max-width:560px){.ds-header{height:60px;padding:0 16px;gap:12px}.ds-brand{font-size:21px}}"
+    },
+    {
+      "name": "Verdict labels",
+      "kind": "chip",
+      "description": "Text-and-icon statuses rather than colored pills; extracted from agent verdicts.",
+      "html": "<div class=\"ds-verdicts\"><span class=\"ds-verdict ds-accept\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m20 6-11 11-5-5\"/></svg>Accepted</span><span class=\"ds-verdict ds-counter\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg>Counteroffer</span><span class=\"ds-verdict ds-reject\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg>Rejected</span></div>",
+      "css": ".ds-verdicts{font-family:'IBM Plex Sans',sans-serif;display:flex;gap:16px}.ds-verdict{display:inline-flex;align-items:center;gap:4px;font-size:9px;white-space:nowrap}.ds-verdict svg{width:12px;height:12px}.ds-accept{color:var(--mint,#a6d7bc)}.ds-counter{color:var(--amber,#e0b37e)}.ds-reject{color:var(--rose,#eda69b)}"
+    },
+    {
+      "name": "Selected flight summary",
+      "kind": "card",
+      "description": "Opaque selected-flight overlay; G1 is a simulation stand and the flight is from source row 76.",
+      "html": "<section class=\"ds-flight\"><div class=\"ds-flight-head\"><strong><svg width=\"15\" height=\"17\" viewBox=\"-14 -15 28 30\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M0-13.5 2-10 2-3 11 3.7 11 6 2 3.4 2 9 5.2 12 5.2 13.5 0 11.7-5.2 13.5-5.2 12-2 9-2 3.4-11 6-11 3.7-2-3-2-10Z\"/></svg>AA1344</strong><span>Selected flight</span></div><p>DEN <svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14m-7-7 7 7-7 7\"/></svg> DFW<span>Taxiing to stand</span></p><div class=\"ds-assignment\"><span>Arrival <b>T+10:00</b></span><span>Stand <b>G1</b></span><span>Source row 76</span></div></section>",
+      "css": ".ds-flight{font-family:'IBM Plex Sans',sans-serif;width:260px;color:var(--text,#e7eeea);background:#152326;border:1px solid #3d514e;border-radius:9px;padding:13px 15px 12px}.ds-flight-head{display:flex;justify-content:space-between;align-items:center}.ds-flight-head strong{font-family:var(--mono,'IBM Plex Mono',monospace);display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--accent,#d8ed91)}.ds-flight-head>span{font-size:9px;color:var(--muted,#96aaa6)}.ds-flight p{display:flex;align-items:center;gap:9px;margin:12px 0 0;color:#d7e1d9;font-size:13px}.ds-flight p>span{margin-left:auto;font-size:9px;color:var(--muted,#96aaa6)}.ds-assignment{display:flex;gap:14px;margin-top:13px;color:var(--muted,#96aaa6);font-size:8px}.ds-assignment b{font-family:var(--mono,'IBM Plex Mono',monospace);color:var(--text,#e7eeea);font-weight:500;margin-left:4px}.ds-assignment>span:last-child{margin-left:auto}@media(max-width:560px){.ds-flight{width:230px;padding:12px}}",
+      "refersTo": "flight-card"
+    },
+    {
+      "name": "Independent agent disclosure",
+      "kind": "custom",
+      "description": "A ruled agent review with original stated reason and expandable applied-check evidence.",
+      "html": "<section class=\"ds-agent\"><button class=\"ds-agent-toggle\" aria-expanded=\"true\"><span><strong>ATC agent</strong><small>Arrival spacing &amp; surface access</small></span><span class=\"ds-agent-status\"><svg viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m20 6-11 11-5-5\"/></svg>Accepted</span></button><p>Arrival spacing, runway availability and taxiway checks pass for all three flights.</p><small class=\"ds-scope\">P1 · Applied checks</small><p class=\"ds-note\">Checked by rules. Explanation is the agent’s stated reason in this scripted replay.</p></section>",
+      "css": ".ds-agent{font-family:'IBM Plex Sans',sans-serif;color:var(--text,#e7eeea);padding:12px 0;border-bottom:1px solid var(--line,#2a3739)}.ds-agent .ds-agent-toggle{transition:background-color 160ms cubic-bezier(.23,1,.32,1),color 160ms cubic-bezier(.23,1,.32,1),border-color 160ms cubic-bezier(.23,1,.32,1);display:flex;align-items:center;gap:9px;cursor:pointer;background:transparent;border:0;width:100%;padding:0;color:inherit;text-align:left}.ds-agent .ds-agent-toggle>span:first-child{display:flex;flex-direction:column;gap:4px}.ds-agent strong{font-size:12px;font-weight:500}.ds-agent small{font-size:10px;color:var(--muted,#96aaa6)}.ds-agent-status{display:flex;align-items:center;gap:4px;margin-left:auto;font-size:9px;color:var(--mint,#a6d7bc)}.ds-agent p{font-size:12px;line-height:1.55;color:#b1c1b9;margin:9px 0 0 39px}.ds-agent .ds-scope{display:block;margin:13px 0 8px 39px;font-size:9px}.ds-agent .ds-note{font-size:9px;line-height:1.6;color:var(--muted,#96aaa6)}.ds-agent .ds-agent-toggle:focus-visible{outline:2px solid var(--accent,#d8ed91);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-agent .ds-agent-toggle:hover strong{color:var(--accent,#d8ed91)}}@media(prefers-reduced-motion:reduce){.ds-agent .ds-agent-toggle{transition-duration:0ms}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Airport surface radar",
+    "overview": "Groundline keeps the established controller review-desk direction: a low-light airport surface, quiet technical geometry and one illuminated aircraft/route selection. The map leads; concise operational explanations and independently labelled ATC, Pilot and Ground reviews sit beside it. Ruled sections carry information without a generic grid of dashboard cards. Its references remain airport CAD, flight progress strips, surface radar, marine charts, aerodrome diagrams, cockpit navigation displays and terminal wayfinding.\n\nThis is a scan of the implemented React + Vite review draft, refreshed on 2026-10-31 from `frontend/src/styles.css`, `App.jsx`, `AirportMap.jsx` and their movement/coordination helpers. IBM Plex fonts are bundled through Fontsource; interface icons and aircraft/map geometry are SVG. No approved raster comp or image asset establishes another identity. Desktop, 1280px and mobile review captures document this draft. The reviewer's final **Ship at fix-only scope** disposition followed restoration of the mobile evidence entry point; it does not establish finished-product approval, live-model performance or operational suitability. Product truth remains in [PRODUCT.md](PRODUCT.md); surface scope remains in [.impeccable/surfaces/frontend.md](.impeccable/surfaces/frontend.md).",
+    "keyCharacteristics": [
+      "Matte charcoal-green surfaces, subdued blue-green airport geometry and off-white reading text.",
+      "Warm lime for selection, route guidance, primary action and keyboard focus.",
+      "Compact sans-serif explanations with monospace flight IDs, times and measurements.",
+      "Flat ruled sections; small bounded panels for grouping and overlays.",
+      "Recorded replay, simulated movement, backend waiting and human review remain visibly distinct."
+    ],
+    "rules": [
+      {
+        "name": "The Evidence Color Rule",
+        "body": "Color alone never establishes agreement, validity or live status. Preserve the displayed outcome, verdict, provenance and applied-check wording.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Keep panels opaque and ruled; reserve glow for the selected proposed route.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** let real airport geometry and the selected aircraft lead the review surface.",
+      "**Do** preserve lime selection/focus, text-plus-icon statuses and the quiet ruled hierarchy.",
+      "**Do** retain map attribution and historical, simulated, recorded and connected-source labels at responsive sizes.",
+      "**Do** keep mobile Decision record access visible before the local human-review action.",
+      "**Do** render original agent reasons, applied checks and backend outcomes without manufacturing progress.",
+      "**Do** use simulation time, stop aircraft at the assigned stand and retire the map track when occupancy ends."
+    ],
+    "donts": [
+      "**Don't** add decorative gradients, glass, oversized metric tiles, generic card grids, fake chat bubbles or process jargon to this radar direction.",
+      "**Don't** label fallback as consensus or refusal as a validated route.",
+      "**Don't** describe static history, illustrative motion or scripted replay as live telemetry or measured model performance.",
+      "**Don't** turn simulation stands/geographic overlays into real gate IDs, routing clearances or airport instructions.",
+      "**Don't** hide evidence access when desktop navigation collapses.",
+      "**Don't** replace the user-selected code-first review draft with a new identity or unapproved raster comp."
+    ]
+  }
+}
