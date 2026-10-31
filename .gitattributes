@@ -1,0 +1,6 @@
+# Keep LF line endings on every platform so source hashes checked by
+# scripts/check_alignment.py match on Windows checkouts (core.autocrlf=true).
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
