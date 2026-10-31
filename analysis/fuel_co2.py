@@ -66,7 +66,9 @@ class Comparison(Wire):
     plan_id: str
     status: Literal["ESTIMATED", "UNKNOWN"]
     hard_constraints: Literal["PASS", "FAIL", "NOT_CHECKED"]
-    fuel_saved_kg: int | None  # Positive: plan burns less than the baseline.
+    # Positive: plan burns less than the baseline. None when there is no estimate
+    # or the plan fails hard constraints (no achievable saving to report).
+    fuel_saved_kg: int | None
     co2_saved_kg: float | None
     headline: str
 
@@ -160,10 +162,14 @@ def compare(plan: PlanEstimate, baseline: PlanEstimate,
     saved = baseline.fuel_kg - plan.fuel_kg
     co2 = _co2(abs(saved))
     if hard_constraints == "FAIL":
-        # An infeasible plan's lower fuel is not a saving anyone could realise.
+        # An infeasible plan's lower fuel is not a saving anyone could realise, so
+        # the numeric fields are withheld too; API clients must not render them.
         headline = (f"{plan.plan_id} fails hard constraints; its fuel figure is not "
                     "an achievable saving.")
-    elif saved > 0:
+        return Comparison(plan_id=plan.plan_id, status="ESTIMATED",
+                          hard_constraints=hard_constraints, fuel_saved_kg=None,
+                          co2_saved_kg=None, headline=f"{headline} ({ESTIMATE_LABEL}.)")
+    if saved > 0:
         headline = (f"{plan.plan_id} saves about {co2:g} kg CO2 ({saved} kg fuel) "
                     "against landing in scheduled order.")
     elif saved < 0:

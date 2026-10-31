@@ -87,6 +87,17 @@ def test_infeasible_plan_is_never_reported_as_a_saving(scenario):
     assert "saves" not in p0.headline
     assert "not an achievable saving" in p0.headline
     assert "infeasible" in render_text(panel)
+    # P0 burns 50 kg less than the baseline, but the JSON must not expose that
+    # as a number an API client could render as a saving.
+    assert p0.fuel_saved_kg is None and p0.co2_saved_kg is None
+
+
+def test_api_withholds_savings_for_infeasible_plans():
+    body = TestClient(create_fuel_app()).get("/scenarios/example/fuel-co2").json()
+    by_id = {c["plan_id"]: c for c in body["comparisons"]}
+    assert by_id["P0"]["hard_constraints"] == "FAIL"
+    assert by_id["P0"]["fuel_saved_kg"] is None and by_id["P0"]["co2_saved_kg"] is None
+    assert by_id["P1"]["co2_saved_kg"] == -158.0
 
 
 def test_saving_headline_wording():
