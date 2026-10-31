@@ -1,6 +1,8 @@
 # AI orchestration architecture and teammate integration contract
 
-Version **1.0** | 2026-10-31 | Status: **design baseline; application not implemented**.
+Version **1.0** | 2026-10-31 | Status: **backend implemented and tested offline on `coordinator`; live models and frontend pending**.
+
+For a short plain-language overview, read [Architecture explained simply](architecture-explained.md).
 
 Build three independent Python agents behind one shared interface. Each agent
 owns its domain checks, context and LLM decision. A deterministic coordinator
@@ -29,9 +31,11 @@ do not create three incompatible copies of the types.**
 | C - Ground | `domains/ground.py`, `agents/ground.py`, ground prompt and domain tests | `evaluate_ground`, `GroundAgent.decide` | Shared types, coordinator, other domain state |
 | D - Integration | `contracts/models.py`, scenario loader/catalog, coordinator, model gateway, event log, minimal UI and integration tests | Shared types, `ModelGateway`, `run_negotiation` | Domain formulas/policies without coordinating with their owner |
 
-The Python modules above are **planned files**, not claims they already exist.
-The copyable models in section 5 are the starting content for
-`contracts/models.py`; D publishes that module and freezes its names first.
+The Python domain/agent/runtime modules now exist on `coordinator`. Pilot and
+Ground were merged from their owners' branches; the user authorized a compatible
+reference ATC implementation while no ATC branch was available. The wire models
+in `contracts/models.py` retain the owners' identical protocol 1.0 shapes.
+See the [backend handoff](backend.md) for tested behavior, API and live-call limits.
 Builders can use stub model responses while D wires the coordinator. Stub runs
 must be labelled as offline integration tests; the submitted agent demonstration
 must use the three independently invoked LLM agents.
@@ -177,8 +181,8 @@ contract; a builder may use one internally only if it obeys the same call budget
 | Per-call timeout | 15 seconds | Includes transport and response parsing |
 | Negotiation budget | 35 seconds | Monotonic deadline across both rounds |
 | Whole-run budget | 40 seconds | Leaves up to 5 seconds for fallback, validation and logging |
-| Model output cap | 800 tokens/call | Provider cap; output still needs schema validation |
-| Input context target | At most 8,000 tokens/call | Count with the chosen provider; failure to fit means fallback, not dropping constraints |
+| Model output cap | 1,600 tokens/call | Matches integrated Pilot/Ground adapters; schema validation still applies |
+| Input context cap | At most 8,000 tokens/call | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
 
 These are unbenchmarked starting budgets. Tune them from measured runs, record
 the change, and keep the hard cap explicit. Two rounds may involve six model
@@ -412,7 +416,7 @@ raw output and usage. Unknown usage is null, not zero. D's gateway validates the
 raw JSON once, disables retries, and enforces provider timeout/output limits.
 The coordinator sets `call_timeout_ms` to the lesser of 15,000 and the remaining
 negotiation budget before dispatch. Every adapter passes that value, divided by
-1,000, as the gateway's `timeout_s`, and uses `max_output_tokens=800`.
+1,000, as the gateway's `timeout_s`, and uses `max_output_tokens=1600`.
 If a provider does not offer constrained output, parse and validate its JSON;
 syntax validity never replaces semantic checks.
 
@@ -720,9 +724,15 @@ The coordinator returns one JSON-serializable RunResult with these fields:
 | `warnings` | Simulation limits, unresolved turn wording and any data/coverage limitations |
 | `event_log_ref` | Run-specific evidence-log identifier |
 
-D's planned entry point: `async def run_negotiation(scenario: ScenarioInput,
+D's implemented entry point: `async def run_negotiation(scenario: ScenarioInput,
 agents: dict[Role, DomainAgent], model: ModelGateway) -> RunResult`.
 Provider selection is a gateway setting; it is not hard-coded in domain modules.
+Optional keyword settings select budgets, log directory and the committed source
+root. `runtime/models.py` defines the result, including additive candidate reports
+for the deterministic comparison endpoint. CLI and local HTTP entry points are
+`app.py` and `api.py`; no frontend is implemented. A persisted revision index
+rejects changed data reusing an existing scenario ID/version. Identical revision
+replays start fresh run IDs and cannot reuse previous votes.
 
 ## 9. Evidence log and minimal UI
 

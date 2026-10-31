@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check documentary/source alignment; does not test an unbuilt application."""
+"""Check documentary/source alignment; application behavior is tested separately."""
 import ast
 import csv
 import hashlib
@@ -121,7 +121,9 @@ for block in re.findall(r'```python\n(.*?)\n```', architecture, re.S):
         errors.append(f'Architecture Python contract syntax: {error}')
 
 # Check relative file links without following network URLs or interpreting source prose.
-md_files = sorted(ROOT.rglob('*.md'))
+excluded = {'.git', '.venv', '.pytest_cache', 'node_modules', 'logs', '.local'}
+md_files = sorted(p for p in ROOT.rglob('*.md')
+                  if not excluded.intersection(p.relative_to(ROOT).parts))
 for path in md_files:
     body = path.read_text(encoding='utf-8')
     if body.count('```') % 2:
@@ -167,4 +169,4 @@ print(f'PASS: {len(md_files)} Markdown documents; 5 source hashes; all CSV schem
 print(f'{counts["rows"]:,} qualifying flight rows; lookup joins; complete lookup tables; source-row examples;')
 print('26 requirement IDs; 6 rubric weights totaling 100%; relative links and file hygiene.')
 print('Architecture Python syntax and integration-fixture source provenance checked.')
-print('Application status remains not implemented / not tested.')
+print('Application behavior is checked separately by the backend test suite; this is a reference/source check.')

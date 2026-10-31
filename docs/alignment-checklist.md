@@ -3,53 +3,52 @@
 Read this with [requirements](challenge-2-requirements.md),
 [rubric](judging-rubric.md), [dataset contract](datasets.md) and
 [multi-agent guardrails](multi-agent-design-constraints.md) before making a
-feature or architecture decision. This is a planned evidence matrix, not a list
-of completed application tests.
+feature or architecture decision. Distinguish implemented backend checks from
+live-model, operational and presentation evidence.
 
 ## Current state
 
-Source conversion and full-file data inspection are complete. All application
-requirements remain **not implemented / not tested**. Gate/fuel/crew/turbulence/
-connection/separation inputs remain **missing from supplied CSVs**. Flight-row
-selection is **data-ready**, but passing a row through running agents is untested.
-The [protocol 1.0 architecture](ai-orchestration-architecture.md) now defines
-teammate interfaces, role tools, budgets, failure handling and acceptance checks.
-Its [integration fixture](examples/coordination-scenario-v1.json) supplies labelled
-simulated operational state; it does not turn those inputs into observed data
-or establish that application requirements have been implemented.
+Source conversion and full-file inspection are complete. The `coordinator`
+branch now implements the backend with the merged Pilot/Ground agents and a
+compatible reference ATC agent. Tests exercise actual adapters/evaluators,
+scripted model replies, mocked provider HTTP and the local API. Real LLM
+generation/timing and frontend/human review UX remain pending. See the
+[backend handoff](backend.md) and executable tests for the evidence boundaries.
+Gate/fuel/crew/turbulence/connection/separation inputs remain absent from the
+CSVs; the fixture supplies labelled simulated state, not observed operational data.
 
 | Requirement IDs | Data / design dependency | Required evidence | Current state |
 |---|---|---|---|
-| C2-01, C2-24 | Separate contexts, calls and tools | Trace shows three independent invocations and domain-specific decisions | Not implemented |
-| C2-02 | Autonomous bounded negotiation | No user assistance during a successful negotiation; final recommendation review remains possible | Not implemented |
-| C2-03 | Validated message schema and source references | Original structured messages parse; malformed ones fail visibly | Not implemented |
-| C2-04, C2-06 | Cross-domain deterministic rule checks | Actual check records for a proposal, not self-reported LLM safety | Not implemented |
-| C2-05, C2-07 | Versioned proposals and immutable event log | All accept the same proposal/scenario; stale votes cannot establish agreement | Not implemented |
-| C2-08 | Deterministic fallback, no-feasible-plan outcome | LLM unavailable or deadline exhausted; checked fallback or explicit escalation | Not implemented |
-| C2-09 | Missing wake category and separation policy | Too-close sequence rejected under documented scenario rule | Inputs missing |
-| C2-10 | Missing taxiway state | Route using a blocked segment rejected | Inputs missing |
-| C2-11 | Modelled demand, available slots and time horizon | Throughput measure and trade-off under stated assumptions | Inputs missing |
-| C2-12, C2-13 | Missing fuel reserves, holding budget and safety limits | Fuel/holding boundary rejected; safety margins cannot be modified by agents | Inputs missing |
-| C2-14 | Missing turbulence/route-exposure information | Different exposure produces a reasoned preference or hard-limit decision | Inputs missing |
-| C2-15 | Missing passenger connections and transfer windows | Connection impact compared across candidate plans | Inputs missing |
-| C2-16 | Missing gate occupancy and compatibility | Gate-overlap/incompatible allocation rejected; utilization reported | Inputs missing |
-| C2-17 | Missing crew shifts and required crew work | Overtime trade-off visible and threshold behaviour checked | Inputs missing |
-| C2-18 | Missing turnaround state/minimum duration | Infeasible turnaround rejected; resulting delay measured | Inputs missing |
-| C2-19, C2-20 | DS-03; strict WEATHER_DELAY > 15 OR LATE_AIRCRAFT_DELAY > 20 | Source hash, selected raw row number and numerical predicate result | Data inspected; application untested |
-| C2-21 | Selected source-row envelope for all agents | Trace links every agent input to the same row and source hash | Not implemented |
-| C2-22 | Arrival/gate/flight-plan decision fields and applicable rules | At least one negotiated adjustment changes the proposal | Not implemented |
-| C2-23, C2-25 | Turn interpretation, bounded rounds, deadlines and retry budget | Round, call, retry and wall-clock counts; repetition/limit exit | Not implemented; wording unresolved |
-| C2-26 | Code-owned hard constraints; final validation | Agents agreeing on an invalid plan still cannot finalize it | Not implemented |
+| C2-01, C2-24 | Separate contexts, calls and tools | Three actual adapters and role-specific reports/contexts | Offline/mocked-provider integration verified; live LLM calls pending |
+| C2-02 | Autonomous bounded negotiation | Successful run requires no user assistance; recommendation only | Backend verified offline; human review UX pending |
+| C2-03 | Validated message schema and source references | Strict parsing, unknown IDs/checks and malformed replies fail visibly | Backend tests pass |
+| C2-04, C2-06 | Cross-domain deterministic rule checks | Actual complete, hash-bound reports for all plans and final selection | Backend tests pass |
+| C2-05, C2-07 | Versioned proposals and evidence log | Fresh round-two votes; stale identity/mutation rejected; original messages/log exported | Backend tests pass; live consent quality unmeasured |
+| C2-08 | Deterministic fallback, no-validated-plan outcome | Outage/deadline/disagreement leads to checked fallback or explicit escalation | Backend tests pass |
+| C2-09 | Synthetic wake classes/separation policy | Too-close sequence and equality boundary exercised | Reference ATC tests pass; no real separation policy claim |
+| C2-10 | Synthetic blocked-route windows | Blockage and touching interval boundary exercised | Reference ATC tests pass; no collision-dynamics model |
+| C2-11 | Simulated arrival demand and fixed horizon | Throughput reported and used in policy | Arrival proxy implemented; actual sector benefit unmeasured |
+| C2-12, C2-13 | Synthetic reserve/holding/earliest/safety inputs | Reserve equality and below-limit rejection; hard limits stay outside model control | Pilot tests pass; holding-only safety subset |
+| C2-14 | Synthetic exposure/cap by flight and slot | Cap/missing-exposure behavior and metrics exercised | Pilot tests pass; live comfort reasoning unmeasured |
+| C2-15 | Synthetic passenger counts/transfer/deadline | Explicit zero-passenger N/A, deadline boundary and missed count | Pilot tests pass; actual itineraries absent |
+| C2-16 | Synthetic gate compatibility/occupancy | Overlap/incompatibility rejected; fixed-horizon gate occupancy reported | Ground tests pass; full capacity benefit unmeasured |
+| C2-17 | Synthetic crew shifts/availability | Overtime formula and crew-delay rerun | Ground and integration tests pass |
+| C2-18 | Synthetic minimum service duration | Infeasible turn rejected; resulting delay reported | Ground tests pass |
+| C2-19, C2-20 | DS-03; strict WEATHER_DELAY > 15 OR LATE_AIRCRAFT_DELAY > 20 | Committed source hash/row 76 checked; strict comparison boundaries tested | Backend verified |
+| C2-21 | Same complete traceable row envelope | Every actual adapter receives identical raw fields in integration test | Offline/mocked-provider verified |
+| C2-22 | Complete arrival/gate plans | P0 changes to P1, changed crew scenario selects P2 | Offline negotiation verified; live result pending |
+| C2-23, C2-25 | Round/call/retry and elapsed budgets | Two rounds, six attempted generations max, no retries, bounded exits | Backend tested; organizer turn wording unresolved; live timing pending |
+| C2-26 | Independent reply checks plus fresh final validation | Invalid acceptance and changed final checks cannot establish consensus | Backend tests pass within declared model |
 
 ## Judging evidence matrix
 
 | Criterion | Evidence to collect | Current state |
 |---|---|---|
 | JR-01 | Named user, disruption workflow, present process and credible pain | Narrative not yet tested with a user |
-| JR-02 | End-to-end inputs/outputs, appropriate LLM/code split and unseen scenarios | No build |
-| JR-03 | Reproducible scenario suite, baseline, measured results and visible failure | No application results |
-| JR-04 | Raw-row provenance, applied rule IDs, original messages, uncertainty and human review | Sources documented; runtime absent |
-| JR-05 | Same-constraint baseline comparison; measured modelled benefits separated from estimates | No benefit claims validated |
+| JR-02 | End-to-end inputs/outputs, appropriate LLM/code split and mutated scenarios | Backend passes offline/mocked HTTP tests; live run pending |
+| JR-03 | Reproducible suite, baseline and visible failure | Default, mutated and failure tests pass; fallback chooses same P1; no multi-agent superiority/live success claim |
+| JR-04 | Provenance, rule IDs, original messages, uncertainty and human review | Runtime evidence/export implemented and tested; frontend/reviewer workflow pending |
+| JR-05 | Same-constraint comparison; measured vs estimated benefits | Modelled metrics verified; no actual operational savings validated |
 | JR-06 | Valid submission timestamp and rehearsed presentation within three minutes | Not submitted/rehearsed |
 
 ## Minimum proposed evaluation cases
