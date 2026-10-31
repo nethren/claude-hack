@@ -10,6 +10,7 @@ from app import default_agents
 from contracts.models import AgentProtocolError, ModelDecision, ScenarioInput
 from runtime.coordinator import run_negotiation
 from runtime.model_gateway import AnthropicGateway, OfflineGateway
+from runtime.models import Budgets
 from runtime.scenario_loader import EXAMPLE
 
 
@@ -80,11 +81,28 @@ def test_bad_provider_output_uses_fallback_and_retains_cost_evidence(tmp_path, f
     assert '"raw_text"' in evidence
 
 
+@pytest.mark.parametrize("effort, expected", [("low", {"effort": "low"}), (None, None)])
+def test_gateway_sends_configured_effort(effort, expected):
+    bodies = []
+
+    async def handler(request):
+        body = json.loads(request.content)
+        bodies.append(body)
+        return httpx.Response(200, json={"content": [{"type": "text", "text": json.dumps(dict(
+            verdict="REJECT", ranked_alternative_ids=[], cited_check_ids=[], reason="r", uncertainty=""))}],
+            "model": "test-model", "stop_reason": "end_turn", "usage": {"input_tokens": 1, "output_tokens": 1}})
+
+    gw = AnthropicGateway(model="test-model", api_key="test-secret-credential", effort=effort,
+                          transport=httpx.MockTransport(handler))
+    asyncio.run(gw.complete(role="atc", system_prompt="s", user_json="{}", timeout_s=1, max_output_tokens=800))
+    assert bodies[0].get("output_config") == expected
+
+
 def test_token_count_over_budget_never_generates(tmp_path):
     calls = []
     def handler(request):
         calls.append(request.url.path)
-        return httpx.Response(200, json={"input_tokens": 8001})
+        return httpx.Response(200, json={"input_tokens": Budgets().input_tokens + 1})
     r = asyncio.run(run_negotiation(EXAMPLE, default_agents(), provider(handler), log_dir=tmp_path))
     assert r.outcome == "FALLBACK" and r.reason_code == "CONTEXT_BUDGET_EXCEEDED"
     assert r.model_calls_attempted == 0 and len(calls) == 3

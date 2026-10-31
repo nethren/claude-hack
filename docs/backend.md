@@ -150,9 +150,10 @@ resolving the earlier 800-token documentation mismatch. Time defaults remain
 unbenchmarked against live models.
 
 Each live request counts the complete prompt through the provider before
-generation, within the invocation timeout. More than 8,000 input tokens or an
+generation, within the invocation timeout. More than 16,000 input tokens or an
 unavailable count invokes fallback without dropping constraints. A separate
-32,000-byte UTF-8 context ceiling also applies. Token-count requests are HTTP
+64,000-byte UTF-8 context ceiling also applies. (Both were raised from
+8,000 tokens / 32,000 bytes after measured live prompts exceeded them; DEC-14.) Token-count requests are HTTP
 requests, not model generations; evidence records them separately. A two-round
 live run may use six count requests plus six model requests. Usage is preserved
 for received malformed model responses; unknown usage remains null. Provider

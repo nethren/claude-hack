@@ -43,10 +43,15 @@ class OfflineGateway:
 class AnthropicGateway:
     mode = "live"
 
-    def __init__(self, *, model: str, api_key: str, base_url="https://api.anthropic.com", transport=None):
+    def __init__(self, *, model: str, api_key: str, effort: str | None = "low",
+                 base_url="https://api.anthropic.com", transport=None):
         if not model or not api_key:
             raise ValueError("Set ANTHROPIC_MODEL and ANTHROPIC_API_KEY for live mode")
         self.model, self._api_key = model, api_key
+        # Explicit effort keeps live calls inside the 15 s per-call budget: at the
+        # model's default (medium on claude-opus-5-5) the 12k-token pilot prompt
+        # timed out in 3/3 live runs. None omits the field (model default).
+        self.effort = effort
         self.base_url, self.transport = base_url.rstrip("/"), transport
 
     async def count_input_tokens(self, system_prompt, user_json, timeout_s, *, role):
@@ -76,7 +81,8 @@ class AnthropicGateway:
                     response = await client.post(self.base_url + "/v1/messages",
                         headers={"x-api-key": self._api_key, "anthropic-version": "2023-06-01"},
                         json={"model": self.model, "max_tokens": max_output_tokens,
-                              "system": system_prompt, "messages": [{"role": "user", "content": user_json}]})
+                              "system": system_prompt, "messages": [{"role": "user", "content": user_json}],
+                              **({"output_config": {"effort": self.effort}} if self.effort else {})})
                     response.raise_for_status()
                     data = response.json()
                 raw = "".join(b["text"] for b in data.get("content", []) if b.get("type") == "text")
@@ -107,4 +113,5 @@ def gateway_from_environment(mode="offline"):
     if mode != "live":
         raise ValueError("mode must be offline or live")
     return AnthropicGateway(model=os.environ.get("ANTHROPIC_MODEL", ""),
-                            api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+                            api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
+                            effort=os.environ.get("ANTHROPIC_EFFORT", "low") or None)

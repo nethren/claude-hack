@@ -182,7 +182,7 @@ contract; a builder may use one internally only if it obeys the same call budget
 | Negotiation budget | 35 seconds | Monotonic deadline across both rounds |
 | Whole-run budget | 40 seconds | Leaves up to 5 seconds for fallback, validation and logging |
 | Model output cap | 1,600 tokens/call | Matches integrated Pilot/Ground adapters; schema validation still applies |
-| Input context cap | At most 8,000 tokens/call | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
+| Input context cap | At most 16,000 tokens/call (raised from 8,000, DEC-14) | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
 
 These are unbenchmarked starting budgets. Tune them from measured runs, record
 the change, and keep the hard cap explicit. Two rounds may involve six model

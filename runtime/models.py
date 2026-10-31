@@ -13,15 +13,18 @@ class Budgets:
     negotiation_s: float = 35
     whole_run_s: float = 40
     output_tokens: int = 1600
-    input_bytes: int = 32000  # Conservative UTF-8 token upper bound, not chars/4.
-    input_tokens: int = 8000
+    input_bytes: int = 64000  # Conservative UTF-8 token upper bound, not chars/4.
+    # Raised from 8,000 (DEC-14): measured live prompts on the 3-plan fixture are
+    # 8.9k-12k tokens in round 1 and up to ~14.7k in round 2, mostly hash-bearing
+    # check IDs that must be passed through verbatim.
+    input_tokens: int = 16000
 
     def __post_init__(self):
         if not (0 < self.call_s <= 15 and
                 0 < self.negotiation_s < self.whole_run_s <= 40):
             raise ValueError("Require call <= 15s and 0 < negotiation < whole run <= 40s")
         if not (0 < self.output_tokens <= 1600 and
-                0 < self.input_tokens <= 8000 and self.input_bytes > 0):
+                0 < self.input_tokens <= 16000 and self.input_bytes > 0):
             raise ValueError("Invalid context/output budget")
 
 
