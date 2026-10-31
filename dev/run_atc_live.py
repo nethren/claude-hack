@@ -63,7 +63,7 @@ async def main(current: str) -> int:
               f"  metrics {view.report.metrics}")
     gateway = ClaudeGateway()
     print(f"\nCalling {gateway.model} as ATC on current proposal {current} "
-          f"(max_tokens={MAX_OUTPUT_TOKENS}, effort={gateway.effort}) ...")
+          f"(max_tokens={MAX_OUTPUT_TOKENS}, effort={gateway.effort or "model default"}) ...")
     try:
         reply = await ATCAgent().decide(request, model=gateway)
     except AgentProtocolError as e:

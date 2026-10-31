@@ -2,8 +2,14 @@
 
 Person D owns the real gateway (runtime/model_gateway.py). This one follows
 the same contract so ATC can be exercised before integration: one call, SDK
-retries disabled, per-call timeout, JSON-only output parsed strictly into
-ModelDecision once. Failures raise AgentProtocolError; nothing is repaired.
+retries disabled, per-call timeout, output parsed strictly into ModelDecision
+once. Failures raise AgentProtocolError; nothing is repaired.
+
+By default the request mirrors D's AnthropicGateway (plain text reply, model's
+default effort, no structured-output format) so live tests exercise the path
+the coordinator uses. structured=True adds the JSON-schema output format and an
+explicit effort instead; on the fixture that mode intermittently returned empty
+reason/uncertainty strings.
 """
 from __future__ import annotations
 
@@ -35,10 +41,11 @@ DECISION_SCHEMA = {
 
 
 class ClaudeGateway:
-    def __init__(self, *, model: str | None = None, effort: str = "low",
+    def __init__(self, *, model: str | None = None, structured: bool = False, effort: str = "low",
                  client: anthropic.AsyncAnthropic | None = None):
         self.model = model or os.environ.get("CLAUDE_MODEL", DEFAULT_MODEL)
-        self.effort = effort
+        self.structured = structured
+        self.effort = effort if structured else None
         self.client = client or anthropic.AsyncAnthropic(max_retries=0)
 
     async def complete(
@@ -48,20 +55,20 @@ class ClaudeGateway:
         def fail(code: str, detail: str) -> AgentProtocolError:
             return AgentProtocolError(code, role, "gateway", detail)
 
+        request = dict(
+            model=self.model,
+            max_tokens=max_output_tokens,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_json}],
+        )
+        if self.structured:
+            request["output_config"] = {
+                "effort": self.effort,
+                "format": {"type": "json_schema", "schema": DECISION_SCHEMA},
+            }
         started = time.monotonic()
         try:
-            response = await self.client.with_options(timeout=timeout_s, max_retries=0).beta.messages.create(
-                model=self.model,
-                max_tokens=max_output_tokens,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_json}],
-                output_config={
-                    "effort": self.effort,
-                    "format": {"type": "json_schema", "schema": DECISION_SCHEMA},
-                },
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
-            )
+            response = await self.client.with_options(timeout=timeout_s, max_retries=0).messages.create(**request)
         except anthropic.APITimeoutError as e:
             raise fail("AGENT_TIMEOUT", f"no response within {timeout_s:.1f}s") from e
         except anthropic.APIStatusError as e:

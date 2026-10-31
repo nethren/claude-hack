@@ -21,7 +21,7 @@ from contracts.models import (
 )
 from domains.atc import RULES_VERSION, hard_checks_pass
 
-PROMPT_VERSION = "atc-prompt-1.2"
+PROMPT_VERSION = "atc-prompt-1.4"
 MAX_OUTPUT_TOKENS = 800
 
 SYSTEM_PROMPT = """\
@@ -49,7 +49,10 @@ one or more plan IDs other than the current plan whose ATC hard checks all PASS.
 Cite at most 3 check IDs, copied exactly. For ACCEPT, cite only checks of the
 current proposal; for COUNTER, only checks of the current proposal or your ranked
 alternatives; for REJECT, failing ATC checks from any candidate.
-Keep reason and uncertainty brief: at most three short sentences each.
+Always write reason and uncertainty: each is one to three short sentences and
+must never be an empty string. The reason names the deciding checks or metrics.
+Output the bare JSON object only: start with { and end with }, with no Markdown,
+code fences or text around it.
 Separation, runway and taxiway values are simulated scenario inputs."""
 
 
@@ -77,8 +80,10 @@ def build_user_json(request: AgentRequest) -> str:
         ]
     payload["output_schema"] = ModelDecision.model_json_schema()
     payload["final_reminder"] = (
-        "Return only ModelDecision JSON. ACCEPT requires every ATC HARD check "
-        "on the current plan to PASS. Hard limits are not negotiable."
+        "Return only the bare ModelDecision JSON object (no code fences) with "
+        "non-empty reason and uncertainty. "
+        "ACCEPT requires every ATC HARD check on the current plan to PASS. "
+        "Hard limits are not negotiable."
     )
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
 
