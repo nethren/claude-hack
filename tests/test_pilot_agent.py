@@ -91,7 +91,7 @@ def test_accept_valid_plan_copies_envelope_with_one_call(scenario):
     assert call["role"] == "pilot"
     assert call["system_prompt"] == SYSTEM_PROMPT
     assert call["timeout_s"] == 12.0
-    assert call["max_output_tokens"] == MAX_OUTPUT_TOKENS == 800
+    assert call["max_output_tokens"] == MAX_OUTPUT_TOKENS == 1600
     for field in ("run_id", "request_id", "scenario_version", "scenario_hash",
                   "round_index", "proposal_id", "current_plan_id", "current_plan_hash"):
         assert getattr(reply, field) == getattr(req, field)
@@ -200,6 +200,26 @@ def test_check_from_unranked_plan_rejected(scenario):
     req = make_request(scenario, current="P1")
     expect_error(req, FakeGateway(decision(cited=[first_check(req, "P2")])),
                  "UNKNOWN_CHECK")
+
+
+def test_reject_may_cite_checks_from_any_candidate(scenario):
+    req = make_request(scenario, current="P1")
+    cited = [first_check(req, pid) for pid in ("P0", "P1", "P2")]
+    reply = decide(req, FakeGateway(decision("REJECT", cited=cited)))
+    assert reply.result.decision.cited_check_ids == cited
+
+
+def test_reject_still_rejects_invented_checks(scenario):
+    expect_error(make_request(scenario, current="P1"),
+                 FakeGateway(decision("REJECT", cited=["pilot:made-up:PILOT_FUEL:F1"])),
+                 "UNKNOWN_CHECK")
+
+
+def test_rejected_reply_keeps_original_model_output(scenario):
+    gw = FakeGateway(decision("COUNTER", ["P9"]))
+    with pytest.raises(AgentProtocolError) as err:
+        decide(make_request(scenario), gw)
+    assert err.value.result.raw_text == json.dumps(gw.decision)
 
 
 def test_non_pilot_request_rejected_before_model_call(scenario):

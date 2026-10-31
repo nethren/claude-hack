@@ -22,8 +22,11 @@ from contracts.models import (
 )
 from domains.pilot import RULES_VERSION, hard_checks_pass
 
-PROMPT_VERSION = "pilot-prompt-1.0"
-MAX_OUTPUT_TOKENS = 800
+PROMPT_VERSION = "pilot-prompt-1.1"
+# Contract default was 800. Measured on claude-opus-5-5 at effort low
+# (2026-10-31): thinking counts toward the cap and 3 of 6 live calls stopped
+# at 800. Pending integration (D) updating the section 4 budget table.
+MAX_OUTPUT_TOKENS = 1600
 
 SYSTEM_PROMPT = """\
 You are the pilot agent for a labelled airport-disruption simulation.
@@ -43,6 +46,8 @@ reserve_kg), PILOT_TURBULENCE (exposure declared and within the cap). Soft costs
 turbulence_units and missed_connections; lower is better but neither is a veto.
 For ACCEPT and REJECT, ranked_alternative_ids must be empty. For COUNTER, list
 one or more plan IDs other than the current plan whose pilot hard checks all PASS.
+For REJECT, you may cite failing pilot checks from any candidate.
+Keep reason and uncertainty brief: at most three short sentences each.
 Fuel, turbulence and connection values are simulated scenario inputs."""
 
 
@@ -92,7 +97,13 @@ class PilotAgent:
             timeout_s=request.call_timeout_ms / 1000,
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
-        validate_decision(result.decision, request)
+        try:
+            validate_decision(result.decision, request)
+        except AgentProtocolError as exc:
+            # Keep the original model output for the evidence log; the vote
+            # itself is still rejected.
+            exc.result = result
+            raise
         return AgentReply(
             protocol_version=request.protocol_version,
             run_id=request.run_id,
@@ -172,15 +183,15 @@ def validate_decision(decision: ModelDecision, request: AgentRequest) -> None:
         if ranked:
             fail("MODEL_JSON_INVALID", "REJECT must have empty ranked_alternative_ids")
 
-    # Cited checks must be actual pilot check records for the current plan or
-    # a ranked alternative of this scenario.
-    citable = {
-        c.check_id
-        for view in [current, *(by_id[pid] for pid in ranked)]
-        for c in view.report.checks
-    }
+    # Cited checks must be actual pilot check records of this scenario: for
+    # the current plan or a ranked alternative, or, for REJECT (which asserts
+    # no candidate is locally valid), any candidate in the request.
+    views = (request.candidates if decision.verdict == "REJECT"
+             else [current, *(by_id[pid] for pid in ranked)])
+    citable = {c.check_id for view in views for c in view.report.checks}
     unknown_checks = [cid for cid in decision.cited_check_ids if cid not in citable]
     if unknown_checks:
+        scope = ("any candidate" if decision.verdict == "REJECT"
+                 else "the current plan or ranked alternatives")
         fail("UNKNOWN_CHECK",
-             f"cited_check_ids {unknown_checks} are not pilot checks for the "
-             "current plan or ranked alternatives")
+             f"cited_check_ids {unknown_checks} are not pilot checks for {scope}")
