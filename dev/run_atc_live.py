@@ -1,6 +1,7 @@
 """Run the ATC agent once against the fixture with a real Claude call.
 
-Usage (needs ANTHROPIC_API_KEY or an `ant auth login` profile):
+Usage (needs ANTHROPIC_API_KEY, an `ant auth login` profile, or a line
+`ANTHROPIC_API_KEY=...` in the repo's git-ignored .env file):
     .venv/Scripts/python -m dev.run_atc_live [P0|P1|P2]
 
 This is a single-agent smoke test, not a negotiation: no pilot/ground agents,
@@ -9,6 +10,7 @@ no coordinator. Output is a live model result on simulated scenario data.
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -24,7 +26,18 @@ from contracts.models import (
 from dev.claude_gateway import ClaudeGateway
 from domains.atc import evaluate_atc, hard_checks_pass
 
-FIXTURE = Path(__file__).resolve().parents[1] / "docs/examples/coordination-scenario-v1.json"
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = ROOT / "docs/examples/coordination-scenario-v1.json"
+
+
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Read KEY=VALUE lines from .env without overriding variables already set."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip("'\""))
 
 
 def build_request(scenario: ScenarioInput, current: str) -> AgentRequest:
@@ -59,7 +72,8 @@ async def main(current: str) -> int:
     except TypeError as e:
         if "authentication" not in str(e):
             raise
-        print("\nNo Claude credentials found. Set ANTHROPIC_API_KEY (or run `ant auth login`) and retry.")
+        print("\nNo Claude credentials found. Add `ANTHROPIC_API_KEY=...` to the repo's .env file "
+              "(git-ignored), set the variable, or run `ant auth login`, then retry.")
         return 2
     d, u = reply.result.decision, reply.result.usage
     print(f"\nverdict: {d.verdict}\nranked: {d.ranked_alternative_ids}\ncited: {len(d.cited_check_ids)} check(s)"
@@ -69,4 +83,5 @@ async def main(current: str) -> int:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     sys.exit(asyncio.run(main(sys.argv[1] if len(sys.argv) > 1 else "P0")))
