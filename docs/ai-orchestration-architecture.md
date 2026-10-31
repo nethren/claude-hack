@@ -1,6 +1,6 @@
 # AI orchestration architecture and teammate integration contract
 
-Version **1.0** | 2026-10-31 | Status: **backend implemented and tested offline on `coordinator`; live models and frontend pending**.
+Version **1.0** | 2026-10-31 | Status: **backend implemented/tested offline; frontend draft on `codex/frontend-draft`; live evaluation pending**.
 
 For a short plain-language overview, read [Architecture explained simply](architecture-explained.md).
 
@@ -182,7 +182,7 @@ contract; a builder may use one internally only if it obeys the same call budget
 | Negotiation budget | 35 seconds | Monotonic deadline across both rounds |
 | Whole-run budget | 40 seconds | Leaves up to 5 seconds for fallback, validation and logging |
 | Model output cap | 1,600 tokens/call | Matches integrated Pilot/Ground adapters; schema validation still applies |
-| Input context cap | At most 16,000 tokens/call (raised from 8,000, DEC-14) | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
+| Input context cap | At most 16,000 tokens/call (raised from 8,000, DEC-19) | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
 
 These are unbenchmarked starting budgets. Tune them from measured runs, record
 the change, and keep the hard cap explicit. Two rounds may involve six model
@@ -730,7 +730,9 @@ Provider selection is a gateway setting; it is not hard-coded in domain modules.
 Optional keyword settings select budgets, log directory and the committed source
 root. `runtime/models.py` defines the result, including additive candidate reports
 for the deterministic comparison endpoint. CLI and local HTTP entry points are
-`app.py` and `api.py`; no frontend is implemented. A persisted revision index
+`app.py` and `api.py`. A separate [frontend review draft](frontend-review.md) now
+consumes this API without changing the agent contracts; it does not claim live
+event streaming or actual aircraft telemetry. A persisted revision index
 rejects changed data reusing an existing scenario ID/version. Identical revision
 replays start fresh run IDs and cannot reuse previous votes.
 

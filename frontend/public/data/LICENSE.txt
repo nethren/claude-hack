@@ -1,0 +1,17 @@
+The geographic airport data in dfw-layout.json incorporates OpenStreetMap data.
+Copyright OpenStreetMap contributors.
+
+The geographic database is made available under the Open Data Commons Open
+Database License (ODbL) 1.0:
+https://opendatacommons.org/licenses/odbl/1-0/
+
+Attribution and source information:
+https://www.openstreetmap.org/copyright
+https://www.openstreetmap.org/#map=14/32.897/-97.041
+
+Coordinates identify actual mapped airport features. Presentation routes,
+simulation stands and aircraft motion do not constitute operational routing,
+airport clearance, live telemetry or a certified aerodrome chart.
+
+The historical flight/replay fixtures are separate from the OpenStreetMap data;
+their supplied source provenance is retained in the project dataset contract.

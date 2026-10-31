@@ -14,7 +14,7 @@ class Budgets:
     whole_run_s: float = 40
     output_tokens: int = 1600
     input_bytes: int = 64000  # Conservative UTF-8 token upper bound, not chars/4.
-    # Raised from 8,000 (DEC-14): measured live prompts on the 3-plan fixture are
+    # Raised from 8,000 (DEC-19): measured live prompts on the 3-plan fixture are
     # 8.9k-12k tokens in round 1 and up to ~14.7k in round 2, mostly hash-bearing
     # check IDs that must be passed through verbatim.
     input_tokens: int = 16000

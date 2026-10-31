@@ -9,3 +9,7 @@ node_modules/
 .local/
 logs/
 .pytest_cache/
+frontend/dist/
+output/
+.playwright-cli/
+.impeccable/review/

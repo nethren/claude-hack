@@ -21,7 +21,25 @@ python -m uvicorn api:app --host 127.0.0.1 --port 8000
 Offline mode exercises the real adapters and checks using scripted model replies;
 it is not a live AI demonstration. For live configuration, API endpoints, frontend
 integration and current limitations, read the [backend handoff](docs/backend.md).
-No frontend is included. Evidence and results are saved under ignored `logs/`.
+Evidence and results are saved under ignored `logs/`.
+
+## Review the frontend draft
+
+The `codex/frontend-draft` branch adds a React + Vite airport surface dashboard:
+real attributed DFW geometry, moving simulated aircraft, selected routes, agent
+decisions/check evidence and scenario drills. From this branch:
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open Vite's local URL. Recorded mode works without the Python server. Connection
+settings can use the existing local backend. This is an interactive review draft;
+scripted replay, simulated operating state and illustrative geographic routing
+are explicit. Read [frontend setup](frontend/README.md) and
+[review/alignment notes](docs/frontend-review.md).
 
 ## Start here
 
@@ -36,6 +54,7 @@ No frontend is included. Evidence and results are saved under ignored `logs/`.
 | [AI orchestration architecture](docs/ai-orchestration-architecture.md) | Protocol 1.0, teammate ownership, shared types, domain tools, integration and failure contracts |
 | [Architecture explained simply](docs/architecture-explained.md) | Plain-language breakdown of the three AI agents, Python coordinator, negotiation and fallback |
 | [Backend handoff](docs/backend.md) | Run/test instructions, API, integration provenance and verified limits |
+| [Frontend review draft](docs/frontend-review.md) | Surface radar, agent review, geography/telemetry limits and verification |
 | [Alignment checklist](docs/alignment-checklist.md) | Requirement-to-data-to-proof matrix |
 | [Decision log](docs/decision-log.md) | Confirmed context, proposals, assumptions and unresolved questions |
 | [Full track brief](docs/airbus-track-brief.md) | Normalized reference for all five challenges |
