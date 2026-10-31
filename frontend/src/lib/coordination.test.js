@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { alternativeSummary, displayPlan, groupedChecks, latestReply, planMetrics, reportFor, validPlan } from './coordination.js';
+import { alternativeSummary, displayPlan, flightIdentity, flightLabel, groupedChecks, latestReply, planMetrics, reportFor, validPlan } from './coordination.js';
 import { aircraftPosition, routeFor } from './movement.js';
+import { conciseReason, currentAgentVerdict, runEndMinute, SCENARIOS, startScenario } from './scenario-runner.js';
 
 const data=(name)=>JSON.parse(fs.readFileSync(new URL(`../../public/data/${name}`,import.meta.url)));
 const bundle=data('demo-run.json'), layout=data('dfw-layout.json');
@@ -74,4 +75,44 @@ test('an impossible scenario has no selected route or fabricated consensus',()=>
   assert.equal(closed.result.selected_plan,null);
   assert.equal(closed.result.acceptances.length,0);
   assert.equal(validPlan(closed,'P1'),false);
+});
+test('the two visible scenarios retain distinct plans and timings',()=>{
+  assert.deepEqual(SCENARIOS.map((s)=>s.id),['base','crew']);
+  assert.equal(runEndMinute(bundle),32);
+  assert.equal(runEndMinute(data('demo-crew.json')),36);
+});
+test('flight display names use inspected source labels without altering domain identities',()=>{
+  assert.equal(flightLabel(bundle.scenario,'F2'),'AA184');
+  assert.equal(flightLabel(bundle.scenario,'F3'),'AA1068');
+  assert.equal(flightIdentity(bundle.scenario,'F2').csv_row_number,20);
+  assert.equal(flightIdentity(bundle.scenario,'F3').csv_row_number,49);
+  assert.equal(bundle.scenario.shared.flights.find((f)=>f.flight_id==='F2').identity_origin,'simulated');
+});
+test('one run reveals exact messages and proposal order without changing the evidence',()=>{
+  const before=JSON.stringify(bundle),events=[],tasks=[];
+  startScenario(bundle,(event)=>events.push(event),{schedule:(fn,at)=>{tasks.push({fn,at});return tasks.length;},cancel:()=>{}});
+  tasks.sort((a,b)=>a.at-b.at).forEach((t)=>t.fn());
+  assert.equal(events[0].type,'START');assert.equal(events.at(-1).type,'RESULT');
+  const messages=events.filter((e)=>e.type==='MESSAGE').map((e)=>e.reply);
+  assert.equal(messages.length,6);
+  assert.deepEqual(messages.map((m)=>m.round_index),[1,1,1,2,2,2]);
+  assert.ok(events.findIndex((e)=>e.type==='PROPOSAL')<events.findIndex((e)=>e.type==='MESSAGE'&&e.reply.round_index===2));
+  assert.equal(JSON.stringify(bundle),before);
+});
+test('switching scenarios cancels pending messages from the previous run',()=>{
+  const tasks=new Map(),events=[];let id=0;
+  const stop=startScenario(bundle,(e)=>events.push(e),{schedule:(fn)=>{tasks.set(++id,fn);return id;},cancel:(key)=>tasks.delete(key)});
+  stop();for(const fn of tasks.values())fn();
+  assert.deepEqual(events.map((e)=>e.type),['START']);
+});
+test('a new proposal cannot reuse the prior round approval',()=>{
+  const pilot=latestReply(bundle,'pilot',1);
+  assert.equal(currentAgentVerdict([pilot],'pilot',1),'ACCEPT');
+  assert.equal(currentAgentVerdict([pilot],'pilot',2),null);
+});
+test('short agent copy preserves constraints and connection trade-offs',()=>{
+  const atc=conciseReason(bundle,latestReply(bundle,'atc',1));
+  assert.match(atc,/3 min/);assert.match(atc,/2 min/);
+  const crew=data('demo-crew.json');
+  assert.match(conciseReason(crew,latestReply(crew,'pilot',2)),/2 passengers miss/);
 });

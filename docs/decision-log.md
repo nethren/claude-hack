@@ -23,6 +23,8 @@ and a data check is not evidence that the application works.
 | DEC-14 | User-confirmed frontend draft | React + Vite, interactive code-first draft, airport surface radar with moving aircraft, highlighted proposed routes, airport conditions and three understandable agent reviews. Isolated on `codex/frontend-draft`. |
 | DEC-15 | Adopted presentation/data boundary | Use cached attributed OpenStreetMap DFW geometry. Backend lacks geographic routing/position data; simulation stands, geographic route mapping and aircraft motion are explicit illustrative overlays, not airport clearances. |
 | DEC-16 | Adopted evidence boundary | The existing API returns completed runs, so show pending while connected work runs and replay recorded original events afterward. Never manufacture live per-agent progress or private chain-of-thought. |
+| DEC-17 | User-requested frontend revision | Two start-to-end scenarios, one Run action, no scrubber, neutral black/yellow-green palette, a larger map and prominent agent messages/statuses. Use stop-slop for the visible copy. Backend integration waits for UI review. |
+| DEC-18 | Adopted data presentation | Move repeated simulation/replay labels into Details. Use inspected historical labels AA184 (row 20) and AA1068 (row 49) for background traffic; preserve F2/F3 synthetic domain identity and raw evidence. Display labels do not establish observed positions. |
 
 ## Proposed designs, not final implementation commitments
 

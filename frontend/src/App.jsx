@@ -1,266 +1,207 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight,
-  CircleCheck, Clock3, CloudDrizzle, Download, Headphones, Pause, Play, Plane, RadioTower,
-  RotateCcw, Settings2, ShieldCheck, SlidersHorizontal, Users, Waypoints, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, CircleCheck,
+  Clock3, Download, Info, Plane, RadioTower, ShieldCheck, Truck, X } from 'lucide-react';
 import AirportMap from './AirportMap.jsx';
-import { alternativeSummary, clockLabel, displayPlan, flightLabel, groupedChecks, latestReply,
-  phaseLabel, planMetrics, reportFor, ROLES, ROLE_NAMES, validPlan } from './lib/coordination.js';
+import { alternativeSummary, clockLabel, displayPlan, flightIdentity, flightLabel,
+  groupedChecks, reportFor, ROLES } from './lib/coordination.js';
+import { FLIGHT_IDENTITIES } from './lib/flight-identities.js';
 import { aircraftPosition } from './lib/movement.js';
+import { conciseReason, currentAgentVerdict, runEndMinute, SCENARIOS, startScenario } from './lib/scenario-runner.js';
 
-const ROLE_ICONS = { atc: RadioTower, pilot: Headphones, ground: Users };
-const ROLE_JOBS = { atc: 'Arrival spacing & surface access', pilot: 'Fuel, comfort & connections', ground: 'Stands, crews & turnaround' };
-const VERDICTS = { ACCEPT: 'Accepted', COUNTER: 'Counteroffer', REJECT: 'Rejected' };
+const ICONS={atc:RadioTower,pilot:Plane,ground:Truck};
+const NAMES={atc:'ATC',pilot:'Pilot',ground:'Ground'};
+const JOBS={atc:'Runway & spacing',pilot:'Fuel & connections',ground:'Stands & crews'};
+const VERDICT={ACCEPT:'Approved',COUNTER:'Counteroffer',REJECT:'Rejected'};
 
-async function getJson(url, options={}) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    if (response.status === 409) throw new Error('Another coordination run is active. Wait for it to finish, then retry.');
-    if (response.status === 503) throw new Error('The coordination service is not configured. Ask the backend owner to check its settings.');
-    throw new Error('Could not reach the coordination service. Start the backend, then retry.');
-  }
+async function loadJson(url) {
+  const response=await fetch(url);
+  if(!response.ok)throw new Error('Could not load the scenario. Reload to try again.');
   return response.json();
 }
 
-function Status({ verdict, children, tone }) {
-  const cls = tone || (verdict === 'ACCEPT' ? 'positive' : verdict === 'COUNTER' ? 'warning' : verdict === 'REJECT' ? 'negative' : 'neutral');
-  const Icon = cls === 'positive' ? Check : cls === 'negative' ? X : cls === 'warning' ? ArrowUpRight : Clock3;
-  return <span className={`status status-${cls}`}><Icon size={12}/>{children || VERDICTS[verdict]}</span>;
+function AgentIcon({role,small=false}) {
+  const Icon=ICONS[role];
+  return <span className={`agent-avatar avatar-${role} ${small?'avatar-small':''}`}><Icon size={small?18:21}/></span>;
 }
 
-function AgentRow({ role, bundle, phase, confirms, waiting, currentPlan }) {
-  const [open, setOpen] = useState(false);
-  const index = ROLES.indexOf(role), Icon = ROLE_ICONS[role];
-  let message = null, label = 'Ready', tone = 'neutral';
-  if (waiting) label = 'Awaiting result';
-  else if (phase === 1) label = 'Checks complete';
-  else if (phase === 2 || phase === 3) message = latestReply(bundle, role, 1);
-  else if (phase === 4) {
-    if (index < confirms) message = latestReply(bundle,role,2) || latestReply(bundle,role);
-    else label = 'Reviewing';
-  } else if (phase === 5) message = latestReply(bundle, role);
-  if (message) label = VERDICTS[message.result.decision.verdict];
-  const report = reportFor(bundle, currentPlan.plan_id, role);
-  const groups = groupedChecks(report);
-  const failures = report?.checks.filter((c) => c.severity === 'HARD' && ['FAIL','UNKNOWN'].includes(c.status)).length || 0;
-  const hardCount = report?.checks.filter((c) => c.severity === 'HARD').length || 0;
-  const reason = waiting ? 'The three agents are coordinating. Their individual results appear when this run finishes.'
-    : message?.result.decision.reason || (phase === 0 ? 'Ready to independently review the proposed plan.'
-      : phase === 1 ? `${hardCount} operational checks evaluated${failures ? `; ${failures} need attention` : '.'}`
-      : 'Independently reviewing the revised arrival and stand assignments.');
-  return <section className={`agent-row ${open ? 'agent-open' : ''}`}>
-    <button className="agent-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-      <span className={`agent-avatar agent-avatar-${role}`}><Icon size={17}/></span>
-      <span className="agent-heading"><strong>{ROLE_NAMES[role]}</strong><span>{ROLE_JOBS[role]}</span></span>
-      <Status verdict={message?.result.decision.verdict} tone={!message ? tone : undefined}>{label}</Status>
-      <ChevronDown size={13} className="agent-chevron"/>
-    </button>
-    <p className="agent-reason">{reason}</p>
-    {open && <div className="agent-checks">
-      <div className="check-scope">{currentPlan.plan_id} · {waiting ? 'Previous run’s checks' : 'Applied checks'}</div>
-      {groups.map((group) => <details key={group.rule} className={`check-group check-${group.status.toLowerCase()}`}>
-        <summary>{group.status === 'PASS' ? <Check size={13}/> : <AlertTriangle size={13}/>}<span>{group.label}</span><span>{group.status === 'PASS' ? 'Pass' : group.status === 'FAIL' ? 'Not met' : 'Unknown'}</span><ChevronRight size={12}/></summary>
-        <div className="check-detail">{group.checks.map((check) => <div key={check.check_id}>
-          <strong>{check.flight_ids.join(' + ') || 'Scenario'}</strong><p>{check.observed}</p><span>{check.required}</span>
-        </div>)}</div>
-      </details>)}
-      <p className="evidence-note">Checked by rules. Explanation is the agent’s stated reason{bundle.kind === 'recorded-scripted-replay' ? ' in this scripted replay' : ''}.</p>
-    </div>}
-  </section>;
+function Decision({verdict,pending=false}) {
+  const Icon=verdict==='ACCEPT'?Check:verdict==='REJECT'?X:verdict==='COUNTER'?ArrowUpRight:Clock3;
+  return <span className={`decision decision-${verdict||'pending'}`}><Icon size={13}/>{VERDICT[verdict]||(pending?'Reviewing':'Ready')}</span>;
 }
 
-function downloadBundle(bundle) {
-  const blob = new Blob([JSON.stringify(bundle,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob), link = document.createElement('a');
-  link.href = url; link.download = `groundline-${bundle.result.run_id}.json`; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+function AgentMessage({bundle,reply}) {
+  const [open,setOpen]=useState(false);
+  const report=reportFor(bundle,reply.current_plan_id,reply.role);
+  const checks=groupedChecks(report);
+  const failures=checks.filter((c)=>c.status!=='PASS');
+  const decision=reply.result.decision;
+  return <article className={`agent-message message-${decision.verdict}`}>
+    <AgentIcon role={reply.role}/>
+    <div className="message-content">
+      <div className="message-heading"><strong>{NAMES[reply.role]}</strong><Decision verdict={decision.verdict}/></div>
+      <p>{conciseReason(bundle,reply)}</p>
+      {decision.verdict==='COUNTER'&&<div className="counter-options">Proposes <strong>{decision.ranked_alternative_ids.join(' or ')}</strong></div>}
+      <button className={`check-toggle ${failures.length?'has-failures':''}`} aria-expanded={open} onClick={()=>setOpen(!open)}>
+        {failures.length?<X size={12}/>:<Check size={12}/>} {failures.length?`${failures.length} ${failures.length===1?'issue':'issues'}`:`${checks.length} checks passed`}<ChevronDown size={12}/>
+      </button>
+      {open&&<div className="message-checks">{checks.map((group)=><details key={group.rule} className={`check-group check-${group.status.toLowerCase()}`}>
+        <summary>{group.status==='PASS'?<Check size={12}/>:<X size={12}/>}<span>{group.label}</span><strong>{group.status==='PASS'?'Pass':group.status==='FAIL'?'Fail':'Unknown'}</strong></summary>
+        <div>{group.checks.map((check)=><p key={check.check_id}><b>{check.flight_ids.map((id)=>flightLabel(bundle.scenario,id)).join(' + ')}</b><span>{check.observed}</span><small>{check.required}</small></p>)}</div>
+      </details>)}</div>}
+    </div>
+  </article>;
+}
+
+function exportEvidence(bundle) {
+  const blob=new Blob([JSON.stringify({...bundle,display_flights:FLIGHT_IDENTITIES},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=`groundline-${bundle.result.run_id}.json`;link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 export default function App() {
-  const [layout,setLayout] = useState(null), [bundle,setBundle] = useState(null), [loadError,setLoadError] = useState('');
-  const [selected,setSelected] = useState('F1'), [phase,setPhase] = useState(5), [confirms,setConfirms] = useState(3);
-  const [clock,setClock] = useState(9.4), clockRef = useRef(9.4);
-  const reduceMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [playing,setPlaying] = useState(!reduceMotion.current), [speed,setSpeed] = useState(20);
-  const [mode,setMode] = useState('replay'), [scenarioKind,setScenarioKind] = useState('base');
-  const [replaying,setReplaying] = useState(false), [waiting,setWaiting] = useState(false), [error,setError] = useState('');
-  const [connection,setConnection] = useState(null), [reviewed,setReviewed] = useState(false), [recordOpen,setRecordOpen] = useState(false);
-  const [inspectedPlan,setInspectedPlan] = useState(null);
-  const timers = useRef([]), planPanel = useRef(null), controller = useRef(null);
+  const [layout,setLayout]=useState(null),[bundles,setBundles]=useState(null),[error,setError]=useState('');
+  const [scenarioId,setScenarioId]=useState('base'),[selected,setSelected]=useState('F1');
+  const [phase,setPhase]=useState(0),[round,setRound]=useState(1),[messages,setMessages]=useState([]);
+  const [status,setStatus]=useState('idle'),[playing,setPlaying]=useState(false);
+  const [clock,setClock]=useState(9.4),clockRef=useRef(9.4);
+  const reducedMotion=useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const cancelRun=useRef(()=>{}),feed=useRef(null);
+  const bundle=bundles?.[scenarioId];
 
-  useEffect(() => {
-    Promise.all([getJson('/data/dfw-layout.json'),getJson('/data/demo-run.json')]).then(([map,run])=>{setLayout(map);setBundle(run);})
-      .catch(()=>setLoadError('The draft could not load its airport map or recorded scenario. Reload to try again.'));
-    return () => { timers.current.forEach(clearTimeout); controller.current?.abort(); };
+  useEffect(()=>{
+    let active=true;
+    Promise.all([loadJson('/data/dfw-layout.json'),loadJson('/data/demo-run.json'),loadJson('/data/demo-crew.json')])
+      .then(([map,base,crew])=>{if(active){setLayout(map);setBundles({base,crew});}})
+      .catch((e)=>{if(active)setError(e.message);});
+    return ()=>{active=false;cancelRun.current();};
   },[]);
 
-  useEffect(() => {
-    if (!playing || !bundle || waiting) return;
-    let frame, previous, lastText = 0;
-    function tick(timestamp) {
-      if (previous !== undefined) clockRef.current = Math.min(40,clockRef.current+Math.min((timestamp-previous)/1000,.1)*speed/60);
-      previous = timestamp;
-      if (timestamp-lastText > 120) { setClock(clockRef.current); lastText=timestamp; }
-      if (clockRef.current >= 40) { setPlaying(false); setClock(40); }
-      else frame = requestAnimationFrame(tick);
+  useEffect(()=>{
+    if(!playing||!bundle)return;
+    let frame,previous,lastLabel=0;
+    const end=runEndMinute(bundle);
+    function tick(now) {
+      if(previous!==undefined)clockRef.current=Math.min(end,clockRef.current+Math.min((now-previous)/1000,.1)*50/60);
+      previous=now;
+      if(now-lastLabel>120){setClock(clockRef.current);lastLabel=now;}
+      if(clockRef.current>=end){setClock(end);setPlaying(false);setStatus('complete');}
+      else frame=requestAnimationFrame(tick);
     }
     frame=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(frame);
-  },[playing,speed,bundle,waiting]);
+  },[playing,bundle]);
 
-  function seek(minute) { clockRef.current=minute; setClock(minute); }
-  function resetTimers() { timers.current.forEach(clearTimeout); timers.current=[]; }
-  function toggleRecord() {
-    setRecordOpen(!recordOpen);
-    setTimeout(()=>document.querySelector('.decision-record')?.scrollIntoView({behavior:reduceMotion.current?'instant':'smooth',block:'nearest'}),0);
-  }
-  function replay() {
-    resetTimers(); setReviewed(false); setInspectedPlan(null); setReplaying(true); setPlaying(false); seek(9.4);setPhase(0);setConfirms(0);
-    [[600,1],[2000,2],[3800,3],[5100,4],[7700,5]].forEach(([delay,p])=>timers.current.push(setTimeout(()=>{
-      setPhase(p);if(p===5){setReplaying(false);setConfirms(3);setPlaying(!reduceMotion.current && bundle.result.outcome!=='ESCALATED');}
-    },delay)));
-    [5650,6350,7000].forEach((delay,i)=>timers.current.push(setTimeout(()=>setConfirms(i+1),delay)));
+  useEffect(()=>{
+    if(feed.current)feed.current.scrollTo({top:feed.current.scrollHeight,behavior:reducedMotion.current?'instant':'smooth'});
+  },[messages.length,phase]);
+
+  function reset(id=scenarioId) {
+    cancelRun.current();setPlaying(false);clockRef.current=9.4;setClock(9.4);
+    setScenarioId(id);setMessages([]);setPhase(0);setRound(1);setStatus('idle');setError('');
   }
 
-  async function changeScenario(kind) {
-    const previousKind=scenarioKind;
-    resetTimers();setReplaying(false);setError('');setReviewed(false);setInspectedPlan(null);setScenarioKind(kind);setPlaying(false);seek(9.4);
-    try {
-      const path = kind === 'crew' ? 'demo-crew.json' : kind === 'closed' ? 'demo-closed.json' : 'demo-run.json';
-      const data=await getJson(`/data/${path}`);setBundle(data);setPhase(5);setConfirms(3);
-      setPlaying(!reduceMotion.current && data.result.outcome==='CONSENSUS');
-    } catch { setScenarioKind(previousKind);setError('This recorded drill could not load. Choose the original scenario to try again.'); }
+  function run() {
+    reset();
+    cancelRun.current=startScenario(bundle,(event)=>{
+      if(event.type==='START'){setStatus('running');setPhase(1);}
+      if(event.type==='ROUND')setRound(event.round);
+      if(event.type==='MESSAGE'){
+        setMessages((current)=>[...current,event.reply]);
+        setPhase(event.reply.round_index===1?2:4);
+      }
+      if(event.type==='PROPOSAL'){setRound(2);setPhase(3);}
+      if(event.type==='RESULT'){
+        setPhase(5);
+        const hasPlan=['CONSENSUS','FALLBACK'].includes(event.result.outcome);
+        if(hasPlan&&!event.reducedMotion){setStatus('moving');setPlaying(true);}
+        else {setStatus('complete');if(hasPlan){clockRef.current=runEndMinute(bundle);setClock(clockRef.current);}}
+      }
+    },{reducedMotion:reducedMotion.current});
   }
 
-  async function connect(value) {
-    setMode(value);setError('');
-    if(value==='backend') {
-      setConnection('connecting');
-      try {const health=await getJson('/api/health');setConnection(health.mode || 'connected');}
-      catch(err){setConnection('unavailable');setError(err.message);}
-    }
-  }
+  if(!layout||!bundle)return <main className="load-state" aria-busy={!error}>
+    <div className="brand-icon"/><h1>{error?'Could not load the scenario':'Loading DFW'}</h1><p>{error||'Preparing the airfield and flights.'}</p>
+    {error&&<button className="run-button" onClick={()=>location.reload()}>Reload</button>}
+  </main>;
 
-  async function runBackend() {
-    resetTimers();setReplaying(false);setWaiting(true);setError('');setReviewed(false);setPlaying(false);
-    controller.current=new AbortController();const timeout=setTimeout(()=>controller.current.abort(),45000);
-    try {
-      const result=await getJson('/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bundle.scenario),signal:controller.current.signal});
-      const events=await getJson(`/api/runs/${result.run_id}/events`);
-      setBundle({kind:'backend-result',scenario:bundle.scenario,result,events});setPhase(5);setConfirms(3);setInspectedPlan(null);
-      if(result.outcome==='INPUT_ERROR')setError('The scenario could not be validated. Open the decision record for details; the input needs review.');
-    } catch(err){setError(err.name==='AbortError'?'The run did not return in time. Check the backend before retrying.':err.message);}
-    finally {clearTimeout(timeout);setWaiting(false);}
-  }
-
-  if(loadError)return <main className="load-state" role="alert"><AlertTriangle size={24}/><h1>Unable to load the draft</h1><p>{loadError}</p><button className="primary-button" onClick={()=>location.reload()}>Reload draft</button></main>;
-  if(!layout || !bundle)return <main className="load-state" aria-busy="true"><div className="brand-icon"/><h1>Loading DFW surface</h1><p>Preparing the airport map and recorded coordination.</p></main>;
-
-  const scenario=bundle.scenario, result=bundle.result, currentPlan=displayPlan(bundle,phase);
-  const source=scenario.shared.source_rows[0].raw;
-  const focus=currentPlan.assignments.find((a)=>a.flight_id===selected);
-  const limits=scenario.pilot.limits.find((l)=>l.flight_id===selected);
-  const atTerminal=aircraftPosition(layout,focus,scenario.shared,clock);
-  const terminalOutcome=phase===5 && !waiting;
-  const consensus=terminalOutcome && result.outcome==='CONSENSUS';
-  const fallback=terminalOutcome && result.outcome==='FALLBACK';
-  const escalated=terminalOutcome && ['ESCALATED','INPUT_ERROR'].includes(result.outcome);
-  const anyCrewDelay=scenario.ground.crews.some((c)=>c.available_windows[0]?.start_min>0);
+  const scenario=bundle.scenario,result=bundle.result,currentPlan=displayPlan(bundle,phase);
+  const focus=currentPlan.assignments.find((a)=>a.flight_id===selected),identity=flightIdentity(scenario,selected);
+  const position=aircraftPosition(layout,focus,scenario.shared,clock);
+  const active=status==='running'||status==='moving';
+  const approved=phase===5&&result.outcome==='CONSENSUS';
+  const ready=phase===5&&['CONSENSUS','FALLBACK'].includes(result.outcome);
   const totalConnections=scenario.pilot.limits.reduce((n,l)=>n+l.connecting_passengers,0);
-  const preserved=Math.max(0,totalConnections-(result.metrics?.missed_connections || 0));
-  const alternatives=scenario.plans.filter((p)=>p.plan_id!==result.selected_plan_id);
-  const title=waiting ? 'Coordination in progress' : phaseLabel(bundle,phase);
-  const reviewLabel = reviewed ? 'Reviewed in this draft' : 'Mark recommendation reviewed';
+  const summary=result.metrics;
+  const title=status==='idle'?'Ready to run':status==='running'?round===1?'Reviewing P0':`Reviewing ${result.selected_plan_id}`:status==='moving'?'Aircraft moving':'Scenario complete';
 
   return <div className="application">
     <header className="app-header">
       <a className="brand" href="/" aria-label="Groundline dashboard"><span className="brand-icon" aria-hidden="true"><i/><i/><i/></span>groundline<span className="brand-period">.</span></a>
-      <span className="header-divider"/>
-      <div className="airport-title"><strong>DFW</strong><span>Dallas Fort Worth<span className="airport-title-extra"> International</span></span></div>
-      <span className="header-surface">Surface coordination</span>
-      <div className="header-right"><span className="session-badge"><span/>{mode==='replay'?'Recorded demo':connection==='live'?'Backend · live models':connection==='offline'?'Backend · scripted':'Backend mode'}</span>
-        <button className={`text-button record-button ${recordOpen?'active':''}`} onClick={toggleRecord}><Clock3 size={15}/>Decision record</button>
-        <details className="connection-control"><summary aria-label="Connection settings"><Settings2 size={18}/></summary><div className="connection-panel"><strong>Coordination source</strong><p>Review the recorded demo or run your local backend.</p><select aria-label="Coordination source" value={mode} onChange={(e)=>connect(e.target.value)}><option value="replay">Recorded demo</option><option value="backend">Connected backend</option></select>{mode==='backend'&&<span className={`connection-note ${connection==='unavailable'?'negative':''}`}>{connection==='unavailable'?'Start the local Python backend and retry.':connection==='connecting'?'Connecting…':`Connected · ${connection==='live'?'live models':'scripted responses'}`}</span>}</div></details>
-      </div>
+      <div className="airport-title"><strong>DFW</strong><span>Dallas Fort Worth</span></div>
+      <details className="run-details"><summary><Info size={15}/>Details</summary><div className="details-panel">
+        <h2>Run details</h2>
+        <dl><div><dt>Flights</dt><dd>DOT 2015 callsigns</dd></div><div><dt>Traffic & movement</dt><dd>Demo data</dd></div><div><dt>Agents</dt><dd>Prepared responses</dd></div><div><dt>Backend</dt><dd>Connect after UI review</dd></div><div><dt>Outcome</dt><dd>{phase===5?result.outcome:'Pending'}</dd></div><div><dt>Model calls</dt><dd>{phase===5?result.model_calls_attempted:0}</dd></div></dl>
+        <p>Flight labels come from rows 76, 20 and 49. Routes use the DFW map as a visual guide.</p>
+        <p>Summaries use saved checks. The export includes the original agent messages and source fields.</p>
+        <button className="text-button" onClick={()=>exportEvidence(bundle)}><Download size={14}/>Export evidence</button>
+      </div></details>
     </header>
 
-    <section className="conditions-bar" aria-label="Airport scenario conditions">
-      <div className="condition condition-disruption"><CloudDrizzle size={19}/><span><span className="condition-label">Historical disruption</span><strong>Weather delay <span className="condition-value">+{source.WEATHER_DELAY} min</span></strong></span></div>
-      <div className="condition"><Waypoints size={18}/><span><span className="condition-label">Surface restriction</span><strong className="amber">Route T2 unavailable</strong></span></div>
-      <div className="condition"><RadioTower size={18}/><span><span className="condition-label">Runway window</span><strong>{scenario.atc.runway_open_windows.length?'Open for arrivals':'No open window'}<span className={`inline-dot ${scenario.atc.runway_open_windows.length?'mint':'rose'}`}/></strong></span></div>
-      <div className="condition"><Users size={18}/><span><span className="condition-label">Ground resources</span><strong>{scenario.ground.gates.length} stands <span className="condition-separator">/</span> {anyCrewDelay?'Crew C2 delayed':`${scenario.ground.crews.length} crews available`}</strong></span></div>
-      <span className="conditions-note">Scenario conditions<br/><span>Not live telemetry</span></span>
+    <section className="scenario-bar" aria-label="Scenario controls">
+      <div className="scenario-tabs" role="tablist" aria-label="Choose scenario">{SCENARIOS.map((item,index)=><button role="tab" aria-selected={scenarioId===item.id} tabIndex={scenarioId===item.id?0:-1} key={item.id} onClick={()=>reset(item.id)} onKeyDown={(event)=>{
+        if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+        event.preventDefault();
+        const next=event.key==='Home'?0:event.key==='End'?SCENARIOS.length-1:(index+(event.key==='ArrowRight'?1:-1)+SCENARIOS.length)%SCENARIOS.length;
+        reset(SCENARIOS[next].id);event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
+      }}><span>{String(index+1).padStart(2,'0')}</span>{item.label}</button>)}</div>
+      <div className="scenario-state"><span className={`state-dot ${status}`}/>{title}</div>
+      <button className="run-button" onClick={run} disabled={active}>{active?<Clock3 size={16}/>:<ArrowRight size={16}/>} {active?'Running…':'Run scenario'}</button>
     </section>
-
-    {error&&<div className="error-banner" role="alert"><AlertTriangle size={16}/><span>{error}</span><button aria-label="Dismiss message" onClick={()=>setError('')}><X size={16}/></button></div>}
 
     <main className="workspace">
       <section className="surface-workspace" aria-labelledby="surface-heading">
-        <div className="surface-heading"><div><h1 id="surface-heading">Airport surface</h1><span>Selected flight and proposed recovery route</span></div><div className="map-mode-label"><span/>Airport layout</div></div>
+        <div className="surface-heading"><h1 id="surface-heading">Airfield</h1><span>{scenario.shared.flights.length} flights <span className="heading-dot">·</span> T+{clockLabel(clock)}</span></div>
         <div className="map-frame">
-          <AirportMap layout={layout} bundle={bundle} plan={currentPlan} selected={selected} onSelect={setSelected} clock={clock} clockRef={clockRef} playing={playing} phase={phase} waiting={waiting}/>
-          <div className="selected-flight">
-            <div className="selected-flight-head"><span><Plane size={15}/><strong>{flightLabel(scenario,selected)}</strong></span><span className="selected-flight-label">Selected flight</span></div>
-            <div className="flight-route"><span>{selected==='F1'?source.ORIGIN_AIRPORT:'SIM'}</span><ArrowRight size={15}/><span>DFW</span><span className="flight-route-state">{atTerminal.phase}</span></div>
-            <div className="flight-assignment"><span>Arrival <strong>T+{clockLabel(focus.landing_min)}</strong></span><span>Stand <strong>{focus.gate_id}</strong></span><span>{selected==='F1'?'Source row 76':'Simulated traffic'}</span></div>
-          </div>
-          <div className={`map-plan-pill ${escalated?'map-plan-pill-warning':''}`}><span className="tiny-route-line"/>{waiting?'Previous recommendation':escalated?'No validated route':phase<3?'Initial plan':'Proposed plan'} <strong>{escalated?'—':currentPlan.plan_id}</strong></div>
+          <AirportMap layout={layout} bundle={bundle} plan={currentPlan} selected={selected} onSelect={setSelected} clock={clock} clockRef={clockRef} playing={playing} phase={phase} waiting={false}/>
+          <div className="selected-flight"><div className="selected-flight-head"><span><Plane size={17}/><strong>{identity.callsign}</strong></span><span>{position.phase}</span></div><div className="flight-route">{identity.origin}<ArrowRight size={14}/>{identity.destination}<span className="flight-stand">{focus.gate_id}</span></div><div className="flight-assignment">Arrival <strong>+{focus.landing_min} min</strong><span>Plan {currentPlan.plan_id}</span></div></div>
+          <div className="map-conditions"><span className="map-condition"><i/>Runway open</span><span className="map-condition restriction"><i/>T2 closed</span>{scenarioId==='crew'&&<span className="map-condition crew-condition">Crew C2 · +20 min</span>}</div>
         </div>
-
-        <section className="playback-bar" aria-label="Simulation playback">
-          <button className="playback-button" aria-label={playing?'Pause aircraft motion':'Play aircraft motion'} aria-pressed={playing} onClick={()=>{if(clockRef.current>=40)seek(0);setPlaying(!playing);}} disabled={replaying || waiting || escalated}>{playing?<Pause size={15} fill="currentColor"/>:<Play size={15} fill="currentColor"/>}</button>
-          <span className="playback-time">T+{clockLabel(clock)}</span>
-          <input aria-label="Simulation time in minutes" type="range" min="0" max="40" step=".05" value={clock} onChange={(e)=>seek(+e.target.value)} disabled={replaying || waiting || escalated}/>
-          <span className="playback-end">40:00</span>
-          <select value={speed} aria-label="Aircraft playback speed" onChange={(e)=>setSpeed(+e.target.value)}><option value="10">10×</option><option value="20">20×</option><option value="40">40×</option></select>
-          <span className="playback-caption">Motion simulation</span>
-        </section>
-
-        <section className="traffic" aria-label="Scenario aircraft">
-          <div className="traffic-heading"><span>Scenario traffic</span><span>{scenario.shared.flights.length} aircraft</span></div>
-          <div className="traffic-list">{currentPlan.assignments.map((a)=>{
-            const position=aircraftPosition(layout,a,scenario.shared,clock);
-            return <button key={a.flight_id} className={`traffic-flight ${a.flight_id===selected?'traffic-selected':''}`} aria-pressed={a.flight_id===selected} onClick={()=>setSelected(a.flight_id)}>
-              <span className="traffic-plane"><Plane size={19}/></span><span className="traffic-identity"><strong>{flightLabel(scenario,a.flight_id)}</strong><span>{a.flight_id==='F1'?`${source.ORIGIN_AIRPORT} → ${source.DESTINATION_AIRPORT}`:'Simulated traffic'}</span></span><span className="traffic-flight-state"><span>{position.phase}</span><strong>{a.gate_id}<ChevronRight size={12}/></strong></span>
-            </button>;
-          })}</div>
-        </section>
+        <div className="traffic-list" aria-label="Flights">{currentPlan.assignments.map((a)=>{
+          const name=flightIdentity(scenario,a.flight_id),p=aircraftPosition(layout,a,scenario.shared,clock);
+          return <button key={a.flight_id} className={`traffic-flight ${selected===a.flight_id?'traffic-selected':''}`} aria-pressed={selected===a.flight_id} onClick={()=>setSelected(a.flight_id)}><Plane size={18}/><span><strong>{name.callsign}</strong><small>{name.origin} → DFW</small></span><span className="traffic-flight-state"><small>{p.phase}</small><strong>{a.gate_id}</strong></span></button>;
+        })}</div>
       </section>
 
-      <aside className="coordination-panel" ref={planPanel} aria-labelledby="coordination-heading">
-        <div className="coordination-scroll">
-        <div className="coordination-title"><h2 id="coordination-heading">Recovery coordination</h2><span className="ai-label"><Waypoints size={12}/>3 AI agents</span></div>
-        <div className={`coordination-stage ${escalated?'stage-escalated':''}`} aria-live="polite">
-          <div className="stage-symbol">{consensus?<ShieldCheck size={21}/>:escalated?<AlertTriangle size={21}/>:fallback?<Waypoints size={21}/>:<RadioTower size={21}/>}</div>
-          <div><h3>{title}</h3><p>{waiting?'Waiting for the completed run':consensus?'All three agents accepted the same plan':fallback?'A checked plan is available without consensus':escalated?'No plan is ready for operational review':phase<3?'Reviewing the initial arrival and stand plan':'Reviewing the revised arrival and stand plan'}</p></div>
-        </div>
-        <div className="round-tracker"><span className={phase>=0?'round-done':''}>Initial plan</span><span className={`tracker-line ${phase>=3?'tracker-line-done':''}`}/><span className={phase>=3?'round-done':''}>Revised plan</span><span className={`tracker-line ${phase===5?'tracker-line-done':''}`}/><span className={phase===5?'round-done':''}>{fallback?'Fallback':escalated?'Escalation':'Agreement'}</span></div>
+      <aside className="coordination-panel" aria-labelledby="coordination-heading">
+        <div className="coordination-title"><h2 id="coordination-heading">Agent coordination</h2><span>{status==='idle'?'3 agents':`Round ${round} / 2`}</span></div>
+        <div className="agent-roster">{ROLES.map((role)=>{
+          const verdict=currentAgentVerdict(messages,role,round);
+          return <div key={role}><AgentIcon role={role} small/><strong>{NAMES[role]}</strong><span className={`roster-state roster-${verdict||'pending'}`}>{VERDICT[verdict]||(active?'Reviewing':'Ready')}</span></div>;
+        })}</div>
 
-        <div className="agents-section"><div className="section-label"><h3>Independent agent review</h3><span>{mode==='replay'?'Recorded replay':waiting?'Running':bundle.kind==='backend-result'?'Run results':'Recorded replay'}</span></div>
-          {ROLES.map((role)=><AgentRow key={`${role}-${result.run_id}`} role={role} bundle={bundle} phase={phase} confirms={confirms} waiting={waiting} currentPlan={currentPlan}/>)}
+        <div className="agent-feed" ref={feed} role="log" aria-label="Agent messages" aria-live="polite" aria-relevant="additions text">
+          {status==='idle'?<div className="scenario-brief"><span className="brief-symbol"><RadioTower size={23}/></span><h3>{SCENARIOS.find((s)=>s.id===scenarioId).label}</h3><p>{scenarioId==='base'?`${flightLabel(scenario,'F1')} and ${flightLabel(scenario,'F2')} share G1. Their arrivals are 2 min apart.`:'Crew C2 starts at +20 min. Adjust the arrivals to fit the available crew.'}</p><span>Run the scenario to hear from each agent.</span></div>:<>
+            <div className="round-label">Initial plan <span>P0</span></div>
+            {messages.filter((r)=>r.round_index===1).map((reply)=><AgentMessage key={reply.request_id} bundle={bundle} reply={reply}/>)}
+            {messages.length===0&&<div className="reviewing-message"><span className="reviewing-dots"><i/><i/><i/></span>Agents are checking P0.</div>}
+            {phase>=3&&<><div className="proposal-message"><WaypointsIcon/><div><strong>Coordinator proposes {result.selected_plan_id}</strong><p>Review the revised arrivals and stands.</p></div></div><div className="round-label">Revised plan <span>{result.selected_plan_id}</span></div></>}
+            {messages.filter((r)=>r.round_index===2).map((reply)=><AgentMessage key={reply.request_id} bundle={bundle} reply={reply}/>)}
+            {phase>=3&&phase<5&&<div className="reviewing-message"><span className="reviewing-dots"><i/><i/><i/></span>Waiting for fresh approvals.</div>}
+            {phase===5&&<div className={`agreement-message ${approved?'agreement-approved':'agreement-other'}`}><ShieldCheck size={19}/><div><strong>{approved?`${result.selected_plan_id} approved`:result.outcome==='FALLBACK'?'Checked fallback':'Needs controller review'}</strong><p>{approved?'ATC, Pilot and Ground agree.':result.outcome==='FALLBACK'?'The coordinator found a valid plan without agreement.':'No plan passed the required checks.'}</p></div></div>}
+          </>}
         </div>
 
-        <section className="why-section" aria-labelledby="why-heading">
-          <div className="section-label"><h3 id="why-heading">Why this plan?</h3><span className="plan-id">{result.selected_plan_id || 'No selection'}</span></div>
-          {!escalated&&result.metrics&&phase>=3&&!waiting ? <><p className="why-headline">{anyCrewDelay?'The available crew can support this plan.':preserved===totalConnections?'Both connections stay on time.':'Meets the limits, with connection trade-offs.'}</p>
-            <div className="plan-outcomes"><div><Clock3 size={14}/><strong>+{result.metrics.additional_delay_min} min</strong><span>Total arrival shift</span></div><div><Users size={14}/><strong>{preserved}/{totalConnections}</strong><span>Connections kept</span></div><div><Users size={14}/><strong>{result.metrics.overtime_min} min</strong><span>Crew overtime</span></div></div>
-          </> : <p className={escalated?'escalation-explanation':'pending-explanation'}>{waiting?'The previous recommendation stays visible on the map until a new run is complete.':phase<3?'A revised recommendation follows the independent agent reviews.':result.outcome==='INPUT_ERROR'?'The scenario needs correction before the agents can review it.':'No candidate passed every operational constraint. Review the runway window or provide another plan.'}</p>}
-          <div className="alternatives">{alternatives.map((p)=>{
-            const summary=alternativeSummary(bundle,p.plan_id);
-            return <button key={p.plan_id} className={`alternative ${inspectedPlan===p.plan_id?'alternative-open':''}`} aria-expanded={inspectedPlan===p.plan_id} onClick={()=>setInspectedPlan(inspectedPlan===p.plan_id?null:p.plan_id)}><span className="alternative-id">{p.plan_id}</span><span className="alternative-copy"><strong>{p.plan_id===scenario.initial_plan_id?'Initial plan':summary.eligible?'Other feasible plan':'Alternative plan'}</strong><span>{summary.text}</span></span><span className={`alternative-status ${summary.eligible?'':'alternative-rejected'}`}>{summary.eligible?'Feasible':'Ruled out'}</span><ChevronRight size={13}/></button>;
-          })}</div>
-          {inspectedPlan&&<div className="alternative-evidence"><strong>{inspectedPlan} · Decision evidence</strong>{alternativeSummary(bundle,inspectedPlan).failures.length?alternativeSummary(bundle,inspectedPlan).failures.slice(0,3).map((c)=><p key={c.check_id}><span>{c.observed}</span><small>Required: {c.required}</small></p>):<p>This plan passes the declared hard checks. The coordinator compares throughput, connections and delay before the other preferences. Its preference order is fixed.</p>}</div>}
+        <section className="plan-summary" aria-label="Plan result">
+          {ready&&summary?<><div className="summary-title"><h3>Plan {result.selected_plan_id}</h3><span><Check size={12}/>{approved?'Approved':'Fallback'}</span></div><div className="plan-outcomes"><div><strong>+{summary.additional_delay_min} min</strong><span>Arrival delay</span></div><div><strong className={summary.missed_connections?'outcome-warning':undefined}>{Math.max(0,totalConnections-summary.missed_connections)}/{totalConnections}</strong><span>Connections kept</span></div><div><strong>{summary.overtime_min} min</strong><span>Crew overtime</span></div></div><details className="plan-comparison"><summary>Why this plan?<ChevronDown size={13}/></summary><div>{scenario.plans.filter((p)=>p.plan_id!==result.selected_plan_id).map((p)=>{
+            const comparison=alternativeSummary(bundle,p.plan_id);
+            return <div key={p.plan_id}><strong>{p.plan_id}<span className={comparison.eligible?'':'rejected-alternative'}>{comparison.eligible?'Feasible':'Ruled out'}</span></strong><p>{comparison.text}</p></div>;
+          })}</div></details><p className="human-review">Ready for controller review.</p></>:<p className="summary-pending">{status==='idle'?'Plan pending':'Waiting for agent agreement.'}</p>}
         </section>
-
-        {recordOpen&&<section className="decision-record"><div className="section-label"><h3>Decision record</h3><button aria-label="Close decision record" onClick={()=>setRecordOpen(false)}><X size={14}/></button></div><dl><div><dt>Source</dt><dd>AA 1344 · CSV row 76 · 2015</dd></div><div><dt>Outcome</dt><dd>{result.outcome}</dd></div><div><dt>Reason</dt><dd>{result.reason_code.replaceAll('_',' ').toLowerCase()}</dd></div><div><dt>Scope</dt><dd>Simulated operating conditions</dd></div><div><dt>Model calls</dt><dd>{result.model_calls_attempted} attempted · {result.retries} retries</dd></div></dl><button className="text-button" onClick={()=>downloadBundle(bundle)}><Download size={14}/>Export original decision evidence</button></section>}
-
-        </div>
-        <div className="panel-footer"><span>{result.rounds_completed} rounds<span>·</span>{result.agent_invocations} agent reviews<span>·</span>{result.model_calls_attempted} model calls</span><button className={`text-button mobile-record-button ${recordOpen?'active':''}`} onClick={toggleRecord}><Clock3 size={14}/>Decision record<ChevronRight size={13}/></button><button className={`review-button ${reviewed?'reviewed':''}`} onClick={()=>setReviewed(true)} disabled={!terminalOutcome || escalated || reviewed}>{reviewed?<Check size={15}/>:<ShieldCheck size={15}/>} {reviewLabel}</button><p>{reviewed?'Local review recorded in this draft.':'Recommendation for qualified human review.'} No airport instructions are sent.</p></div>
       </aside>
     </main>
-
-    <footer className="scenario-toolbar"><div className="scenario-description"><span className="scenario-status"/><span><strong>{scenarioKind==='crew'?'Crew availability disruption':scenarioKind==='closed'?'No runway availability':'Weather & surface disruption'}</strong><span>{scenarioKind==='base'?'AA1344 · DEN → DFW':'Simulation drill'}<span className="footer-dot">·</span>{scenario.shared.flights.length} planned arrivals</span></span></div>
-      <div className="scenario-actions"><label className="scenario-select"><SlidersHorizontal size={14}/><select value={scenarioKind} aria-label="Select disruption scenario" onChange={(e)=>changeScenario(e.target.value)} disabled={waiting || replaying}><option value="base">Original scenario</option><option value="crew">Crew delay drill</option><option value="closed">No runway drill</option></select></label><button className="primary-button" onClick={mode==='replay'?replay:runBackend} disabled={waiting || replaying}>{replaying?<RadioTower size={15}/>:mode==='replay'?<RotateCcw size={15}/>:<Waypoints size={15}/>} {waiting?'Coordinating…':replaying?'Replaying coordination…':mode==='replay'?'Replay coordination':'Run coordination'}<ArrowRight size={15}/></button></div>
-    </footer>
-    <div className="draft-disclosure"><span>INTERACTIVE REVIEW DRAFT</span><span>{bundle.kind==='recorded-scripted-replay'?'Scripted decisions through the real backend · Recorded events, not live agent progress':'Connected run · Original backend decisions and check evidence'}</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Map data & attribution<ArrowUpRight size={11}/></a></div>
+    <footer className="app-footer"><span>{scenarioId==='base'?'Weather delay +35 min · Stand conflict':'Crew C2 unavailable before +20 min'}</span><span>DFW <span>·</span> Airport surface</span></footer>
   </div>;
 }
+
+function WaypointsIcon(){return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h6a4 4 0 0 1 0 8h-2a4 4 0 0 0 0 8h6"/></svg>;}

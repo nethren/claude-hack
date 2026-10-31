@@ -1,3 +1,5 @@
+import { FLIGHT_IDENTITIES } from './flight-identities.js';
+
 export const ROLES = ['atc', 'pilot', 'ground'];
 export const ROLE_NAMES = { atc: 'ATC agent', pilot: 'Pilot agent', ground: 'Ground agent' };
 export const RULE_LABELS = {
@@ -68,7 +70,13 @@ export function alternativeSummary(bundle, planId) {
 export function flightLabel(scenario, flightId) {
   const f = scenario.shared.flights.find((f) => f.flight_id === flightId);
   const source = scenario.shared.source_rows.find((r) => r.source_id === f?.source_id);
-  return source ? `${source.raw.AIRLINE}${source.raw.FLIGHT_NUMBER}` : `SIM ${flightId.replace('F', '0')}`;
+  return source ? `${source.raw.AIRLINE}${source.raw.FLIGHT_NUMBER}` : FLIGHT_IDENTITIES[flightId]?.callsign || flightId;
+}
+
+export function flightIdentity(scenario, flightId) {
+  const f = scenario.shared.flights.find((f) => f.flight_id === flightId);
+  const source = scenario.shared.source_rows.find((r) => r.source_id === f?.source_id);
+  return source ? {callsign:flightLabel(scenario,flightId),origin:source.raw.ORIGIN_AIRPORT,destination:source.raw.DESTINATION_AIRPORT,csv_row_number:source.csv_row_number} : FLIGHT_IDENTITIES[flightId];
 }
 
 export function clockLabel(minute) {

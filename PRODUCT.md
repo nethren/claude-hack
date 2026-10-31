@@ -32,7 +32,8 @@ there is no event streaming or live position telemetry.
 
 ## Capabilities and Constraints
 
-- Use real, attributed airport geometry with clearly labelled simulated overlays.
+- Use real, attributed airport geometry. Keep the demo-data scope in Details;
+  remove repeated replay/simulation labels from the main workspace.
 - Highlight the selected aircraft and its proposed route. Expose details on hover,
   focus and click; move aircraft only according to the simulation timeline.
 - Make three agents and their ACCEPT/COUNTER/REJECT statuses visible in plain language.
@@ -46,6 +47,9 @@ there is no event streaming or live position telemetry.
 User requested a radar/plane tracker interface with illuminated route guidance,
 an airport conditions section and simple aircraft icons. It should be polished,
 understandable and restrained rather than a technical agent-debugging console.
+The user now wants neutral black surfaces, yellow-green selection, a larger map,
+larger agent messages, distinct role icons and colored verdicts. Use two scenarios
+and one Run action; remove the scrubber. Apply stop-slop to the visible copy.
 
 ## Evidence on Hand
 
@@ -57,5 +61,6 @@ fuel/crew/weather telemetry or airport-coordinate waypoints exist in that contra
 
 - Let the airport and selected aircraft lead the screen.
 - Explain a decision through visible constraints, alternatives and source evidence.
-- Distinguish recorded replay, simulated motion and connected backend states.
+- Keep provenance and backend status in Details. Run the two local scenarios
+  from start to finish; connect the backend after the user reviews this revision.
 - Use plain operational labels; keep hashes, raw JSON and configuration in secondary views.

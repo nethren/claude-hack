@@ -1,103 +1,73 @@
-# Frontend draft: airport surface and recovery coordination
+# Frontend review: two scenario runs
 
-User-approved stack: React + Vite; code-first interactive draft. Implementation
-is isolated on `codex/frontend-draft` for review while teammate branches merge.
-The backend and protocol 1.0 wire contracts are unchanged.
+React + Vite on `codex/frontend-draft`. The user requested a simpler page, neutral
+black surfaces, yellow-green selection, a larger map and a larger agent message
+panel. The view now offers Arrival conflict and Crew delay, each with one
+**Run scenario** action. It removes the scrubber and repeated replay labels.
+Backend integration follows the user's review; this revision changes no Python
+code or agent contract.
 
-## Review outcome and UI structure
+## Run flow
 
-Groundline is a provisional product name for this draft. A real DFW surface map
-occupies the main workspace. A lime aircraft/route selection, flight hover/focus
-details, paused/scrubbable motion and a three-flight strip make the plan tangible.
-The conditions strip shows only supplied historical disruption and simulated
-runway/route/ground state. The right panel exposes independently invoked ATC,
-Pilot and Ground decisions, stated reasons, check evidence and alternatives.
-Consensus, fallback, escalation and input error have distinct labels.
+Each run starts at P0. The view shows original ATC, Pilot and Ground decisions,
+then a new proposal and fresh second-round approvals. Aircraft move after a
+valid result. The view stops when the last aircraft completes its stand window.
+Switching scenarios cancels pending messages and resets the view. Reduced-motion
+users get the same decisions with a final static traffic state.
 
-The draft replays actual stored coordinator events using explicitly scripted
-model decisions. Replay pacing is for explanation and does not claim to be real
-model timing. A connected run remains pending until the existing API returns;
-only then are original decisions and reports rendered. No private chain-of-thought
-or synthetic live transcript is requested or shown.
+Role icons differ in shape, symbol and color: a blue tower for ATC, a yellow-green
+aircraft for Pilot and an amber vehicle for Ground. Approval badges use green;
+counteroffers use amber; rejection and failed checks use red. Short summaries
+come from the actual checks. Message disclosures use the exact plan each agent
+reviewed. The export retains original decisions and source fields.
 
-## Requirement/rubric/data alignment
+Details holds the demo-data scope and pending backend status. The primary view
+uses historical callsigns instead of SIM labels. No live label or real-model
+progress claim appears in the view.
 
-| Surface | C2 / JR support | Exact consumed fields and limits |
+## Requirement and data alignment
+
+| Surface | C2 / JR support | Inputs and limits |
 |---|---|---|
-| Airport conditions and selected flight | C2-09 to C2-22; JR-01/JR-04 | Source raw AIRLINE, FLIGHT_NUMBER, ORIGIN_AIRPORT, DESTINATION_AIRPORT, WEATHER_DELAY; historical minutes. Shared source row remains unchanged. ATC opening/blockage windows and Ground gate/crew arrays are labelled scenario state. |
-| Motion, route and stand | C2-22; JR-02/JR-04 | Assignment landing_min/gate_out_min, shared taxi minutes, gate_id/taxi_route_id; derived gate-in = landing + taxi. Geographic mapping/position are missing from the backend and explicitly illustrative. No operational execution. |
-| Independent agent panel | C2-01 to C2-07/C2-24/C2-26; JR-02/JR-04 | AgentReply role, round, current plan, ModelDecision verdict/reason/citations and DomainReport checks. Preserve original evidence, do not infer votes from prose. |
-| Why this plan / alternatives | C2-04/C2-06/C2-07; JR-03/JR-05 | candidate_reports, actual hard failures and deterministic metrics. Delay/overtime in simulated minutes, connections in passenger counts, turbulence ordinal. Feasible alternatives stay labelled feasible, not unsafe. |
-| Playback, rounds and export | C2-07/C2-08/C2-23/C2-25; JR-03/JR-04/JR-06 | Original event order, outcome/reason, rounds, agent invocations/model calls, retries. Explicit replay/pending state; backend two-round deadlines/fallback remain authoritative. |
-| Human review | C2-02/C2-26; JR-04 | Local draft review state and full evidence export; qualified person reviews a recommendation. There is no invented backend approval/execution call. |
+| Airfield and flight labels | C2-19 to C2-22; JR-01/JR-04 | Raw AIRLINE, FLIGHT_NUMBER, ORIGIN_AIRPORT and DESTINATION_AIRPORT. AA1344 uses row 76; display labels AA184/AA1068 use rows 20/49. Keep F2/F3 operational overlays synthetic. |
+| Route and movement | C2-22; JR-02/JR-04 | Integer landing_min, gate_out_min, shared taxi minutes and gate/route IDs. Gate-in = landing + taxi. Geographic routes and positions remain illustrative. |
+| Agent messages and verdicts | C2-01 to C2-07/C2-24/C2-26; JR-02/JR-04 | Original role, proposal, round, verdict and reports. Display summaries preserve the constraint and connection trade-offs; they do not replace the original evidence. |
+| Plan comparison | C2-04/C2-06/C2-07; JR-03/JR-05 | Hard failures and deterministic metrics. A feasible alternative stays feasible. Connections count passengers; delay and overtime use scenario minutes. |
+| Run and review | C2-05/C2-07/C2-08/C2-23/C2-25; JR-03/JR-04 | Separate rounds and new approvals; explicit outcomes and export. Two visible scenarios use prepared outputs, not new model generations. Backend limits/fallback remain unchanged. |
 
-Every named responsibility remains available: ATC runway/wake/taxi checks and
-arrival count; Pilot earliest arrival, fuel, turbulence and passenger connections;
-Ground stands, crew availability, turnaround and overtime. The UI does not remove
-a responsibility because the original CSV lacks its operational input.
+The checks still cover wake spacing, runway/taxiway access, throughput, fuel,
+turbulence, passenger connections, gate/stand use, crew availability/overtime and
+turnaround. The view moves details behind disclosures rather than dropping a
+responsibility.
 
-## Real geography and simulation boundary
+## Provenance and backend boundary
 
-The map includes actual OpenStreetMap airport geometry, with visible ODbL
-attribution and a dedicated license notice. It includes seven runway pairs and
-the actual central terminal footprints. Original mapped coordinates, feature
-identities and download hashes are retained in the cached map data.
+The actual seed remains CSV row 76: AA1344 DEN–DFW, WEATHER_DELAY=35 and
+LATE_AIRCRAFT_DELAY=40 minutes. The provided raw row stays intact. All three
+backend agents receive the same source envelope under the existing protocol.
+Display aliases do not add another observed flight row to that contract.
 
-The backend's single runway and T1/T2/G1/G2 abstraction does not designate a real
-runway, taxiway or gate. Geographic routes and simulation stands are presentation
-mapping, not a certified airport layout/clearance model. The moving positions are
-derived animation, not ADS-B or live ground radar. Coordinates were not added to
-the agent protocol and are never fed into its validators as purported real facts.
-Historical flight row 76 and simulated operating state remain distinguishable.
+The supplied CSV lacks geographic taxi routes, gates, fuel, wake classes,
+passenger itineraries and crew state. OpenStreetMap supplies real geometry;
+the scenario supplies labelled operational overlays. The view does not imply
+that the cached 2015 flight identities share observed traffic positions.
 
-This supports a polished explanation of the build; it cannot establish live
-flight safety, authentic physical routing, measured fuel savings or actual
-operational benefit. The same limitation applies to the prototype backend.
+The two Run flows use stored coordinator outputs and client-side presentation
+timers. They do not call an LLM or backend. Details states **Demo data** and
+**Prepared responses**, and lists backend integration as pending UI review.
+The export includes the original messages, checks, source fields and display
+identity provenance. The UI sends no airport instructions.
 
-## Interaction and convergence
+## Six-hour trade-off and checks
 
-Frontend consumes backend results; it does not rank plans with AI, change hard
-limits or override consensus. Replay uses the original two-round stored sequence.
-Drills use separate scenario versions. An API failure produces a retryable error;
-an escalated result hides the proposed route and disables recommendation review.
-Backend consensus/fallback/escalation are distinct, and counts are never reset to
-make multiple runs look like one. Individual live progress requires a future
-backend job/event-stream contract rather than fabricated frontend timers.
+Keep one airport, three aircraft, two scenarios and cached geometry. Use one
+frontend event boundary so a backend adapter can replace the prepared flow after
+review. Avoid live traffic subscriptions, map keys, another agent SDK and changes
+to teammate contracts.
 
-## Scope trade-off and acceptance checks
-
-One real airport, three scenario aircraft and cached vector geometry are the
-six-hour trade-off. Avoid API-key map services, live traffic subscriptions, 3D,
-another agent SDK and provider secrets in the browser. No backend contract or
-domain evaluator was changed for this draft.
-
-Acceptance: production frontend build; focused data/motion/fixture tests;
-desktop/mobile browser inspection; moving aircraft stop at assigned stands;
-selection/hover/focus and route visibility work; replay shows actual counteroffers
-then fresh acceptance; crew drill changes the selected plan; closed-runway drill
-escalates; connected API renders original evidence; reduced motion starts paused;
-source hashes/reference checks still pass. Final verification evidence is recorded
-with the handoff, not inferred from the design description.
-
-## Verification snapshot
-
-- Production frontend build passed; nine focused fixture/data/movement tests passed.
-- Browser inspection covered 1440px, 1280px and 390px; mobile has no horizontal overflow.
-- Browser verified moving/paused aircraft, hover details, agent check disclosure,
-  alternative evidence, recorded counteroffers followed by acceptance, crew drill
-  selecting P2, and no-runway escalation hiding the route/disabling review.
-- The frontend submitted an actual request to the local Python API and rendered
-  its returned result/events. The server used offline responses; no live model
-  claim follows from this connection check.
-- Reduced-motion emulation starts aircraft playback paused.
-- Tracks retire when their declared stand occupancy ends; no invented outbound
-  route or lingering icon blocks a later plan's use of the same stand.
-- Mechanical design detector returned no findings. Independent visual review
-  identified one mobile evidence-entry issue; the labelled action was restored
-  and the reviewer scored that finding resolved. Its final Ship verdict is a
-  fix-only verification, not certification of operational suitability.
-- The full source/reference check passed, preserving original input hashes.
-
-The user has not approved the visual direction as a finished product; this is
-the concrete interactive draft requested for review. The local preview remains
-available through Vite. No merge into main or public deployment is part of this draft.
+Frontend checks cover the two cases, source labels, report-bound summaries,
+fresh-round approvals, pending-event cancellation, movement and track retirement.
+Browser checks cover Run through completion, colored decisions, map/flight
+selection, keyboard scenario choice, mobile layout and accessible evidence.
+The build and source/reference checks must pass before handoff. Keep earlier
+backend/API verification separate from this frontend-only revision's evidence.

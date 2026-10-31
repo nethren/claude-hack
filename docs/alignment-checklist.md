@@ -17,12 +17,12 @@ generation/timing and frontend/human review UX remain pending. See the
 Gate/fuel/crew/turbulence/connection/separation inputs remain absent from the
 CSVs; the fixture supplies labelled simulated state, not observed operational data.
 
-The [frontend review draft](frontend-review.md) now renders the real DFW geometry
-with explicitly illustrative routes/positions, agent decision/check disclosures,
-alternative comparisons and distinct failure outcomes. Recorded scenarios use
-scripted backend decisions; connected requests wait for terminal results rather
-than faking streaming progress. Frontend review approval and live model evaluation
-remain separate from backend/source verification.
+The [frontend review draft](frontend-review.md) renders the real DFW geometry,
+agent messages, plan-bound checks and alternatives. Its current two Run scenarios
+use prepared backend outputs; the user deferred integration until UI review.
+Details retains the demo-data scope and source evidence. Historical display
+callsigns do not convert synthetic traffic positions into observations.
+Frontend approval and live evaluation remain separate from backend/source checks.
 
 | Requirement IDs | Data / design dependency | Required evidence | Current state |
 |---|---|---|---|
