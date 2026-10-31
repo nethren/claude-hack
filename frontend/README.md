@@ -14,22 +14,40 @@ npm run build
 npm test
 ```
 
-## Run a scenario
+## Run the integrated demo
 
-Choose **Arrival conflict** or **Crew delay**, then click **Run scenario**.
-The view starts at P0, shows the agents' objections, proposes a new plan and
-collects fresh approvals. Aircraft then move through their assigned arrivals and
-stands. Completed tracks leave the map at gate-out. Switch scenarios to reset.
+Start the backend (API + fuel/CO2 panel) from the repository root, then the
+frontend. Vite proxies `/api` to the backend on port 8000.
+
+```sh
+.venv/Scripts/python -m dev.serve          # offline test agents, no key needed
+.venv/Scripts/python -m dev.serve --live   # live Claude agents (key from env or .env)
+cd frontend && npm run dev
+```
+
+Choose a scenario and click **Run scenario**. The browser sends the scenario to
+`POST /runs`; the coordinator invokes the ATC, Pilot and Ground agents
+independently and checks every reply in code. The view then replays the run's
+own recorded events. The header badge shows whether the agents were live
+Claude calls or the offline test double. No API key enters the browser.
+
+| Scenario | Story | Deterministic checks allow |
+|---|---|---|
+| **All clear** | The proposed plan P1 already passes every domain | CONSENSUS in round 1 |
+| **Counteroffer** | P0 has a 2 min arrival gap and a shared stand | Counteroffers, P1 selected; CONSENSUS (or FALLBACK if a live agent times out) |
+| **Runway closed** | Runway closed until +45 min; every plan lands earlier | ESCALATED to a controller |
+
+Escalation shows an urgent alert with the soonest fuel-reserve deadline, the
+rules that ruled out every plan and a **Take control** action. Plans with a
+selected result show a modelled fuel/CO2 estimate from `/runs/{id}/fuel-co2`.
+Live agents decide their own verdicts, so a live run can legitimately differ
+from the offline outcome; the view shows whatever the run produced.
 
 The map uses neutral black surfaces and yellow-green selection. The larger
-message panel gives ATC, Pilot and Ground distinct icons and verdict colors.
-Expand a message's checks or **Why this plan?** for the supporting evidence.
-**Details** holds the data scope, model-call count and evidence export.
-
-The user requested frontend review before backend integration. The Run action
-uses prepared backend outputs through `src/lib/scenario-runner.js`; it makes no
-provider or backend request. A future adapter can feed the same original reply
-and result events into the view. No API key enters the browser.
+message panel gives ATC, Pilot and Ground distinct icons and verdict colors,
+plus each agent's own reason. Expand a message's checks or **Why this plan?**
+for the supporting evidence. **Details** holds the data scope, model-call count
+and evidence export.
 
 ## Data and evidence
 

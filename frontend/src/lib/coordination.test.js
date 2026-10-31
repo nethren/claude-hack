@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { alternativeSummary, displayPlan, flightIdentity, flightLabel, groupedChecks, latestReply, planMetrics, reportFor, validPlan } from './coordination.js';
+import { alternativeSummary, blockingRules, displayPlan, flightIdentity, flightLabel, fuelDeadlines, groupedChecks, latestReply, pendingResult, planMetrics, proposedPlan, reportFor, runwayClosedUntil, validPlan } from './coordination.js';
 import { aircraftPosition, routeFor } from './movement.js';
-import { conciseReason, currentAgentVerdict, runEndMinute, SCENARIOS, startScenario } from './scenario-runner.js';
+import { BackendError, conciseReason, currentAgentVerdict, runEndMinute, runLiveScenario, SCENARIOS, startScenario } from './scenario-runner.js';
 
 const data=(name)=>JSON.parse(fs.readFileSync(new URL(`../../public/data/${name}`,import.meta.url)));
 const bundle=data('demo-run.json'), layout=data('dfw-layout.json');
@@ -76,8 +76,11 @@ test('an impossible scenario has no selected route or fabricated consensus',()=>
   assert.equal(closed.result.acceptances.length,0);
   assert.equal(validPlan(closed,'P1'),false);
 });
-test('the two visible scenarios retain distinct plans and timings',()=>{
-  assert.deepEqual(SCENARIOS.map((s)=>s.id),['base','crew']);
+test('the visible scenarios are the three backend demo outcomes',()=>{
+  assert.deepEqual(SCENARIOS.map((s)=>s.id),['clear','counter','escalate']);
+  assert.deepEqual(SCENARIOS.map((s)=>s.expected),['CONSENSUS','CONSENSUS or FALLBACK','ESCALATED']);
+});
+test('recorded runs retain distinct plans and timings',()=>{
   assert.equal(runEndMinute(bundle),32);
   assert.equal(runEndMinute(data('demo-crew.json')),36);
 });
@@ -115,4 +118,75 @@ test('short agent copy preserves constraints and connection trade-offs',()=>{
   assert.match(atc,/3 min/);assert.match(atc,/2 min/);
   const crew=data('demo-crew.json');
   assert.match(conciseReason(crew,latestReply(crew,'pilot',2)),/2 passengers miss/);
+});
+
+// Live backend integration.
+const fakeBackend=(routes)=>async(url,init={})=>{
+  const key=`${init.method||'GET'} ${url}`;
+  const route=routes[key];
+  if(route===undefined)throw new TypeError('fetch failed');
+  return {ok:route.status===undefined||route.status<400,status:route.status||200,json:async()=>route.body};
+};
+test('a live run posts the scenario and assembles the same bundle shape as a recording',async()=>{
+  const recorded=data('demo-run.json'),calls=[];
+  const fetchImpl=async(url,init={})=>{calls.push(`${init.method||'GET'} ${url}`);return fakeBackend({
+    'GET /api/scenarios/demo/counter':{body:recorded.scenario},
+    'POST /api/runs':{body:recorded.result},
+    [`GET /api/runs/${recorded.result.run_id}/events`]:{body:recorded.events},
+    [`GET /api/runs/${recorded.result.run_id}/fuel-co2`]:{body:{selected_plan_id:'P1',panel:{plans:[],comparisons:[],baseline:{}}}},
+  })(url,init);};
+  const live=await runLiveScenario('counter',{fetchImpl});
+  assert.deepEqual(calls.slice(0,2),['GET /api/scenarios/demo/counter','POST /api/runs']);
+  assert.equal(live.kind,'live-backend-run');
+  assert.deepEqual(Object.keys(live).sort(),['events','fuel','kind','result','scenario']);
+  assert.equal(live.result.outcome,'CONSENSUS');assert.equal(live.fuel.selected_plan_id,'P1');
+});
+test('backend failures surface as readable errors, never as a fabricated run',async()=>{
+  await assert.rejects(runLiveScenario('counter',{fetchImpl:fakeBackend({})}),/Cannot reach the backend/);
+  const busy=fakeBackend({'GET /api/scenarios/demo/counter':{body:{}},'POST /api/runs':{status:409,body:{detail:'busy'}}});
+  await assert.rejects(runLiveScenario('counter',{fetchImpl:busy}),(e)=>e instanceof BackendError&&e.status===409&&/still finishing/.test(e.message));
+  const unconfigured=fakeBackend({'GET /api/scenarios/demo/counter':{body:{}},'POST /api/runs':{status:503,body:{}}});
+  await assert.rejects(runLiveScenario('counter',{fetchImpl:unconfigured}),/no model or API key/);
+});
+test('a missing fuel panel does not block the run result',async()=>{
+  const recorded=data('demo-run.json');
+  const live=await runLiveScenario('counter',{fetchImpl:fakeBackend({
+    'POST /api/runs':{body:recorded.result},[`GET /api/runs/${recorded.result.run_id}/events`]:{body:recorded.events},
+  }),scenario:recorded.scenario});
+  assert.equal(live.fuel,null);assert.equal(live.result.selected_plan_id,'P1');
+});
+test('the revised plan shown is the one the coordinator published for round 2',()=>{
+  assert.equal(proposedPlan(bundle,1).plan_id,'P0');
+  assert.equal(proposedPlan(bundle,2).plan_id,'P1');
+  assert.equal(displayPlan(bundle,3).plan_id,'P1');
+  const tasks=[],events=[];
+  startScenario(bundle,(e)=>events.push(e),{schedule:(fn,at)=>{tasks.push({fn,at});return tasks.length;},cancel:()=>{}});
+  tasks.sort((a,b)=>a.at-b.at).forEach((t)=>t.fn());
+  assert.equal(events.find((e)=>e.type==='PROPOSAL').planId,'P1');
+});
+test('an escalated run lists the blocking rule and the soonest fuel deadline',()=>{
+  const closed=data('demo-closed.json');
+  assert.equal(closed.result.outcome,'ESCALATED');
+  assert.equal(runwayClosedUntil(closed.scenario),Infinity);
+  const rules=blockingRules(closed);
+  assert.equal(rules[0].rule,'ATC_RUNWAY');assert.deepEqual(rules[0].plans,['P0','P1','P2']);
+  // F1: earliest 10, (1000-700)/50 = 6 min of holding fuel above reserve.
+  assert.deepEqual(fuelDeadlines(closed.scenario)[0],{flight_id:'F1',reserve_min:16});
+  assert.match(conciseReason(closed,latestReply(closed,'atc',1)),/runway is closed/i);
+});
+test('a runway that reopens later reports the reopening minute',()=>{
+  const s=structuredClone(bundle.scenario);
+  s.atc.runway_open_windows[0].start_min=45;
+  assert.equal(runwayClosedUntil(s),45);
+  assert.equal(runwayClosedUntil(bundle.scenario),null);
+});
+test('ATC wake copy reads both evaluator message formats',()=>{
+  const reply=latestReply(bundle,'atc',1),copy=structuredClone(bundle);
+  for(const r of copy.result.candidate_reports.P0)for(const c of r.checks)
+    if(c.rule_id==='ATC_WAKE'&&c.status==='FAIL'){c.observed='F1->F2 gap 2 min';c.required='>= 3 min (M->M separation 3, runway occupancy 1)';}
+  assert.equal(conciseReason(copy,reply),'I need 3 min between arrivals. The current gap is 2 min.');
+});
+test('a pending scenario preview has no outcome or reports',()=>{
+  const p=pendingResult();
+  assert.equal(p.outcome,null);assert.deepEqual(p.candidate_reports,{});assert.equal(p.selected_plan,null);
 });

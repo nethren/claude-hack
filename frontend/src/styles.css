@@ -1575,3 +1575,261 @@ a {
     scroll-behavior:auto;
   }
 }
+
+/* Live backend integration: mode badge, waiting state, run errors. */
+.mode-badge {
+  margin-left:auto;
+  margin-right:14px;
+  font:500 11px var(--mono);
+  letter-spacing:.02em;
+  padding:5px 9px;
+  border-radius:4px;
+  border:1px solid var(--line);
+  color:var(--muted);
+}
+.mode-badge.mode-live {
+  color:var(--accent);
+  border-color:#4c5a28;
+  background:#171d0b;
+}
+.mode-badge.mode-unreachable {
+  color:var(--red);
+  border-color:#6b3430;
+  background:#241210;
+}
+.state-dot.waiting {
+  background:var(--amber);
+  animation:dot-pulse 1.2s ease-in-out infinite;
+}
+.state-dot.escalated {
+  background:#ff5a4d;
+  box-shadow:0 0 0 3px #ff5a4d33;
+  animation:dot-pulse .9s ease-in-out infinite;
+}
+.run-error {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:0 25px 14px;
+  padding:10px 14px;
+  border:1px solid #6b3430;
+  background:#241210;
+  color:var(--red);
+  border-radius:5px;
+  font-size:13px;
+}
+.agent-quote {
+  margin:6px 0 0;
+  padding:6px 0 6px 10px;
+  border-left:2px solid #333;
+  color:var(--muted);
+  font-size:11.5px;
+  line-height:1.5;
+  font-style:italic;
+}
+
+/* Escalation: the run could not validate any plan, so a human must act. */
+.application-escalated .app-header {
+  box-shadow:inset 0 -2px 0 #ff5a4d;
+}
+.escalation-alert {
+  margin-top:12px;
+  padding:14px 15px 15px;
+  border:1px solid #ff5a4d;
+  border-radius:6px;
+  background:linear-gradient(180deg,#3a1411,#21100e);
+  color:#ffd9d4;
+  animation:alert-pulse 1.6s ease-in-out infinite;
+}
+.escalation-alert.escalation-acknowledged {
+  animation:none;
+  border-color:#8a463f;
+  background:#21100e;
+}
+.escalation-head {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  color:#ff7a6e;
+}
+.escalation-head strong {
+  display:block;
+  font-size:15px;
+  color:#fff1ef;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.escalation-head span {
+  display:block;
+  font:500 11px var(--mono);
+  color:#ff9990;
+  margin-top:2px;
+}
+.escalation-lead {
+  font-size:12.5px;
+  line-height:1.5;
+  margin:11px 0 9px;
+}
+.escalation-facts {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:6px;
+}
+.escalation-facts li {
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:12px;
+  line-height:1.45;
+}
+.escalation-facts li svg {
+  flex-shrink:0;
+  margin-top:2px;
+  color:#ff9990;
+}
+.escalation-facts .fact-critical {
+  padding:7px 9px;
+  border-radius:4px;
+  background:#5a1a15;
+  color:#fff1ef;
+}
+.escalation-options {
+  font-size:11.5px;
+  color:#e7b7b1;
+  line-height:1.5;
+  margin:10px 0 12px;
+}
+.escalation-button {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  min-height:40px;
+  border-radius:5px;
+  background:#ff5a4d;
+  color:#1d0705;
+  font-size:13px;
+  font-weight:600;
+}
+.escalation-ack {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--green);
+  margin:0;
+}
+.map-frame.map-escalated {
+  outline:2px solid #ff5a4d;
+  outline-offset:-2px;
+}
+.surface-heading .map-alert {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-right:auto;
+  margin-left:14px;
+  padding:4px 10px;
+  border-radius:4px;
+  background:#ff5a4d;
+  color:#1d0705;
+  font:600 11px var(--mono);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  animation:alert-pulse 1.6s ease-in-out infinite;
+}
+.summary-escalated {
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  color:#ff7a6e;
+}
+.summary-escalated strong {
+  font-size:13px;
+  color:#fff1ef;
+}
+.summary-escalated p {
+  margin:3px 0 0;
+  font-size:11.5px;
+  color:#e7b7b1;
+}
+
+/* Fuel & CO2 modelled estimate inside the plan summary. */
+.carbon-card {
+  margin-top:12px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:5px;
+  background:#0f130c;
+}
+.carbon-title {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12px;
+  color:var(--green);
+}
+.carbon-title span {
+  margin-left:auto;
+  font:500 10px var(--mono);
+  color:var(--quiet);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.carbon-figures {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:8px;
+}
+.carbon-figures strong {
+  display:block;
+  font:500 14px var(--mono);
+}
+.carbon-figures span {
+  font-size:10.5px;
+  color:var(--muted);
+}
+.carbon-card p {
+  margin:8px 0 0;
+  font-size:11px;
+  line-height:1.45;
+  color:var(--muted);
+}
+.outcome-good {
+  color:var(--green);
+}
+
+@keyframes dot-pulse {
+  50% { opacity:.35; }
+}
+@keyframes alert-pulse {
+  0%,100% { box-shadow:0 0 0 0 #ff5a4d55; }
+  50% { box-shadow:0 0 0 6px #ff5a4d00; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .escalation-alert,.map-alert,.state-dot.waiting,.state-dot.escalated {
+    animation:none;
+  }
+}
+.mode-badge {
+  white-space:nowrap;
+}
+.mode-short {
+  display:none;
+}
+@media(max-width:560px) {
+  .mode-badge {
+    margin-right:8px;
+    padding:4px 7px;
+  }
+  .mode-long {
+    display:none;
+  }
+  .mode-short {
+    display:inline;
+  }
+}

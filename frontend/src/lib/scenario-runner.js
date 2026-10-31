@@ -1,9 +1,53 @@
-import { flightLabel, replies, reportFor, ROLES } from './coordination.js';
+import { flightLabel, proposedPlan, replies, reportFor, ROLES, runwayClosedUntil } from './coordination.js';
 
+// Backend demo scenarios (runtime/demo_scenarios.py), one per outcome.
 export const SCENARIOS = [
-  { id:'base', label:'Arrival conflict', file:'demo-run.json', description:'Resolve an arrival gap and a shared stand.' },
-  { id:'crew', label:'Crew delay', file:'demo-crew.json', description:'Adjust arrivals while a crew is unavailable.' },
+  { id:'clear', label:'All clear', expected:'CONSENSUS',
+    description:'The airline’s proposed plan already fits runway spacing, fuel and stands.' },
+  { id:'counter', label:'Counteroffer', expected:'CONSENSUS or FALLBACK',
+    description:'Arrivals are 2 min apart and two aircraft share G1. Agents counter and the best plan is chosen.' },
+  { id:'escalate', label:'Runway closed', expected:'ESCALATED',
+    description:'The runway is closed until +45 min. No plan can land safely, so a controller must decide.' },
 ];
+
+export class BackendError extends Error {
+  constructor(message, status=null) { super(message); this.status=status; }
+}
+
+function friendly(status, detail) {
+  if(status===409)return 'A previous run is still finishing on the server. Try again in a few seconds.';
+  if(status===503)return 'The backend is in live mode but has no model or API key configured.';
+  if(status===422)return `The backend rejected the scenario: ${detail||'invalid input'}.`;
+  return `The backend returned HTTP ${status}${detail?`: ${detail}`:''}.`;
+}
+
+async function call(fetchImpl, path, init) {
+  let response;
+  try { response=await fetchImpl(`/api${path}`, init); }
+  catch { throw new BackendError('Cannot reach the backend. Start it with: uvicorn api_fuel:app --port 8000'); }
+  if(!response.ok) {
+    let detail='';
+    try { const body=await response.json(); detail=typeof body.detail==='string'?body.detail:''; } catch { /* non-JSON error body */ }
+    throw new BackendError(friendly(response.status, detail), response.status);
+  }
+  return response.json();
+}
+
+export function backendHealth({fetchImpl=fetch}={}) { return call(fetchImpl, '/health'); }
+export function loadScenario(id, {fetchImpl=fetch}={}) { return call(fetchImpl, `/scenarios/demo/${id}`); }
+
+// Runs the real coordinator: the three agents are invoked server-side (live
+// Claude or the offline test double, per the server's COORDINATOR_MODE). The
+// returned bundle has the same shape as the recorded fixtures.
+export async function runLiveScenario(id, {fetchImpl=fetch, scenario=null}={}) {
+  const input=scenario||await loadScenario(id,{fetchImpl});
+  const result=await call(fetchImpl, '/runs', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(input)});
+  const [events, fuel]=await Promise.all([
+    call(fetchImpl, `/runs/${result.run_id}/events`),
+    call(fetchImpl, `/runs/${result.run_id}/fuel-co2`).catch(()=>null),
+  ]);
+  return { kind:'live-backend-run', scenario:input, result, events, fuel };
+}
 
 // Frontend-only event presentation. A future backend adapter can implement this
 // boundary without changing the view or protocol 1.0 agent messages.
@@ -16,7 +60,7 @@ export function startScenario(bundle, emit, { reducedMotion=false, schedule=setT
   const second=replies(bundle,2);
   first.forEach((reply,index)=>send(850+index*750,{type:'MESSAGE',reply}));
   if(second.length) {
-    send(3300,{type:'PROPOSAL',planId:bundle.result.selected_plan_id});
+    send(3300,{type:'PROPOSAL',planId:proposedPlan(bundle,2)?.plan_id||second[0].current_plan_id});
     second.forEach((reply,index)=>send(4100+index*750,{type:'MESSAGE',reply}));
   }
   send(second.length?6350:3400,{type:'RESULT',result:bundle.result,reducedMotion});
@@ -32,13 +76,19 @@ export function conciseReason(bundle, reply) {
   const decision=reply.result.decision;
   const bad=(report?.checks||[]).filter((c)=>c.severity==='HARD'&&['FAIL','UNKNOWN'].includes(c.status));
   if(reply.role==='atc') {
+    if(bad.some((c)=>c.rule_id==='ATC_RUNWAY')) {
+      const reopens=runwayClosedUntil(bundle.scenario);
+      if(reopens===Infinity)return 'The runway is closed. I cannot clear any arrival.';
+      if(reopens!==null)return `The runway is closed until +${reopens} min. Every plan lands before it reopens.`;
+      return 'I cannot clear an arrival within the runway window.';
+    }
     const wake=bad.find((c)=>c.rule_id==='ATC_WAKE');
     if(wake) {
-      const gap=wake.observed.match(/gap=(\d+)/)?.[1];
+      // "gap=2" (reference evaluator) or "F1->F2 gap 2 min" (ATC agent).
+      const gap=wake.observed.match(/gap[= ](\d+)/)?.[1];
       const required=wake.required.match(/>= (\d+)/)?.[1];
       if(gap&&required)return `I need ${required} min between arrivals. The current gap is ${gap} min.`;
     }
-    if(bad.some((c)=>c.rule_id==='ATC_RUNWAY'))return 'I cannot clear an arrival within the runway window.';
     if(decision.verdict==='ACCEPT')return 'Runway, spacing and taxiway checks pass.';
   }
   if(reply.role==='pilot'&&decision.verdict==='ACCEPT') {
