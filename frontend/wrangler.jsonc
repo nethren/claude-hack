@@ -1,13 +1,35 @@
-// Cloudflare Workers static-assets deploy of the hosted demo.
-// From frontend/: npm run deploy  (first time: npx wrangler login)
+// groundline.nethren.com: the built frontend plus the live coordinator backend.
+// Static files are served directly; /api/* runs the Worker, which forwards to
+// the Python backend in a Cloudflare Container (built from ../Dockerfile).
+//
+// First deploy, from frontend/ (needs Docker running and the Workers Paid plan):
+//   npx wrangler login
+//   npx wrangler secret put ANTHROPIC_API_KEY
+//   npm run deploy
 {
   "name": "groundline",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   },
+  "containers": [
+    { "class_name": "Backend", "image": "../Dockerfile", "max_instances": 1, "instance_type": "basic" }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "BACKEND", "class_name": "Backend" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Backend"] }],
+  // Each run is 3 to 6 Claude calls. 3 runs a minute per visitor, 10 site-wide.
+  "ratelimits": [
+    { "name": "RUN_LIMIT_VISITOR", "namespace_id": "4101", "simple": { "limit": 3, "period": 60 } },
+    { "name": "RUN_LIMIT_SITE", "namespace_id": "4102", "simple": { "limit": 10, "period": 60 } }
+  ],
   "routes": [
     { "pattern": "groundline.nethren.com", "custom_domain": true }
-  ]
+  ],
+  "observability": { "enabled": true }
 }

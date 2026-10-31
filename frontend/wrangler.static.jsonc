@@ -1,0 +1,8 @@
+// Fallback: static-only deploy that replays the recorded runs in
+// public/data/runs (no backend, no API key, free plan). npm run deploy:static
+{
+  "name": "groundline",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "routes": [{ "pattern": "groundline.nethren.com", "custom_domain": true }]
+}

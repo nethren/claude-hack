@@ -1,0 +1,16 @@
+.git
+.venv
+.env
+.env.*
+frontend
+node_modules
+logs
+output
+tests
+.pytest_cache
+.playwright-cli
+.impeccable
+__pycache__
+**/__pycache__
+*.pyc
+.DS_Store

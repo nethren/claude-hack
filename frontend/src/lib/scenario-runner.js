@@ -15,7 +15,8 @@ export class BackendError extends Error {
 }
 
 function friendly(status, detail) {
-  if(status===409)return 'A previous run is still finishing on the server. Try again in a few seconds.';
+  if(status===409)return 'Another run is still finishing on the server. Try again in a few seconds.';
+  if(status===429)return detail||'Too many runs right now. Wait a minute and try again.';
   if(status===503)return 'The backend is in live mode but has no model or API key configured.';
   if(status===422)return `The backend rejected the scenario: ${detail||'invalid input'}.`;
   return `The backend returned HTTP ${status}${detail?`: ${detail}`:''}.`;

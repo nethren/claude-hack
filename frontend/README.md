@@ -49,18 +49,29 @@ plus each agent's own reason. Expand a message's checks or **Why this plan?**
 for the supporting evidence. **Details** holds the data scope, model-call count
 and evidence export.
 
-## Hosted demo (groundline.nethren.com)
+## Hosted site (groundline.nethren.com)
 
-The hosted copy has no backend. `npm run build:static` builds a version that
-replays `public/data/runs/{clear,counter,escalate}.json`, one recorded run per
-scenario, and labels itself "Recorded live Claude run" or "Recorded test run".
-These files are unaltered API output. No API key is in the build.
+`npm run deploy` publishes one Cloudflare Worker. It serves `dist/` and sends
+`/api/*` to the Python backend running in a Cloudflare Container built from the
+repository's `Dockerfile`, in live mode. Clicking **Run scenario** on the site
+invokes the three Claude agents for real. The Worker forwards only the routes
+the app uses, caps the scenario body and rate limits runs (3 a minute per
+visitor, 10 site-wide). The Anthropic key is a Worker secret passed to the
+container at start; it is in no file and not in the browser.
 
-To re-record (for example after changing an agent), start the backend with
-`python -m dev.serve --live`, then from the repository root run
-`python frontend/scripts/record-runs.py`. Deploy from `frontend/` with
-`npm run deploy` (first time: `npx wrangler login`). `wrangler.jsonc` serves
-`dist/` as Cloudflare Workers static assets on the custom domain.
+First deploy, from `frontend/`. Needs Docker running and the Workers Paid plan,
+which Containers require:
+
+```sh
+npx wrangler login
+npx wrangler secret put ANTHROPIC_API_KEY
+npm run deploy
+```
+
+`npm run deploy:static` is the free fallback. It publishes a copy with no
+backend that replays `public/data/runs/*.json`, one recorded live run per
+scenario, labelled "Recorded live Claude run". Re-record those with the backend
+running (`python -m dev.serve --live`) via `python frontend/scripts/record-runs.py`.
 
 ## Data and evidence
 
