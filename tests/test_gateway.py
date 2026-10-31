@@ -5,6 +5,7 @@ import json
 import httpx
 import pytest
 
+from agents import atc, ground, pilot
 from app import default_agents
 from contracts.models import AgentProtocolError, ModelDecision, ScenarioInput
 from runtime.coordinator import run_negotiation
@@ -42,7 +43,13 @@ def test_real_http_gateway_integrates_all_roles_and_counts_calls(tmp_path):
     assert len(r.usage) == 6 and sum(u.input_tokens for u in r.usage) == 6000
     assert sum(u.output_tokens for u in r.usage) == 1200
     assert len(requests) == 12  # 6 token-count requests, 6 model generations, no retries.
-    assert all(json.loads(req.content)["max_tokens"] == 1600 for req in requests if not req.url.path.endswith("count_tokens"))
+    # Each generation carries its own agent's declared output cap (ATC 800, pilot/ground 1600).
+    caps = {"atc": atc.MAX_OUTPUT_TOKENS, "pilot": pilot.MAX_OUTPUT_TOKENS, "ground": ground.MAX_OUTPUT_TOKENS}
+    for req in requests:
+        if not req.url.path.endswith("count_tokens"):
+            body = json.loads(req.content)
+            role = json.loads(body["messages"][0]["content"])["candidates"][0]["report"]["role"]
+            assert body["max_tokens"] == caps[role]
     assert "test-secret-credential" not in (tmp_path / r.event_log_ref).read_text()
 
 
