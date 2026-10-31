@@ -8,6 +8,13 @@ urgent **escalation**. A React dashboard on a DFW airport map runs real agent ca
 real 2015 DOT delayed flight and shows each agent's reasoning, the checks behind it and a
 modelled fuel/CO₂ estimate.
 
+![Groundline running the three scenarios with live Claude agents](docs/media/groundline-demo.gif)
+
+All three scenarios run against live Claude agents on 31 Oct 2026, recorded with
+Playwright. Waits for agent replies are shown at 8x and the rest at 2.5x; each
+stretch is labelled. Full quality: [sped-up MP4](docs/media/groundline-demo.mp4),
+[real-time MP4](docs/media/groundline-demo-realtime.mp4) (2 min 10 s, uncut).
+
 ## How it works
 
 | Part | Uses an LLM for | Code is responsible for |
@@ -25,18 +32,45 @@ Every result is a recommendation for a controller; nothing is executed.
 
 ## Run the demo
 
-Python 3.11+ and Node 20.19+/22.12+, from the repository root:
+You need Python 3.11+ and Node 20.19+ (or 22.12+). Use two terminals, both
+starting at the repository root.
+
+**Terminal 1: backend**
 
 ```sh
-python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.lock   # macOS/Linux: .venv/bin/python
-.venv/Scripts/python -m dev.serve --live                   # live Claude agents
-cd frontend && npm ci && npm run dev                        # in a second terminal
+# macOS / Linux
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+.venv/bin/python -m dev.serve
 ```
 
-Live mode reads `ANTHROPIC_API_KEY` from the environment or a git-ignored `.env`
-(see [.env.example](.env.example)); drop `--live` to run offline test agents with no key.
-Open the Vite URL, choose a scenario and click **Run scenario**.
+```powershell
+# Windows
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.lock
+.venv\Scripts\python -m dev.serve
+```
+
+It prints `Backend mode: offline on http://127.0.0.1:8000`.
+
+**Terminal 2: frontend**
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open <http://127.0.0.1:5173>, choose a scenario and click **Run scenario**.
+
+Offline mode needs no API key. It runs the real coordinator, domain checks and
+agent adapters with a scripted model standing in for Claude, so every outcome
+and check is visible at no cost.
+
+**Live Claude agents.** Copy [.env.example](.env.example) to `.env` (git-ignored)
+and set `ANTHROPIC_API_KEY`. Restart the backend with `dev.serve --live`. The
+header badge changes from **Offline test agents** to **Live Claude agents**, and
+a run takes 10 to 40 seconds.
 
 | Scenario | Situation | Outcome |
 |---|---|---|
@@ -50,10 +84,12 @@ is real (CSV row 76); fuel, stands, crews and runway state are simulated and lab
 ## Test
 
 ```sh
-.venv/Scripts/python -m pytest -q           # 206 backend tests
-cd frontend && npm test && npm run build    # 24 frontend tests + build
-.venv/Scripts/python scripts/check_alignment.py
+.venv/bin/python -m pytest -q                    # 206 backend tests
+.venv/bin/python scripts/check_alignment.py      # source and requirement checks
+cd frontend && npm test && npm run build         # 25 frontend tests and the build
 ```
+
+On Windows use `.venv\Scripts\python` in place of `.venv/bin/python`.
 
 The alignment check verifies source hashes, schemas, row counts, disruption eligibility,
 lookup joins, Markdown links and requirement coverage.
