@@ -103,14 +103,16 @@ def test_context_contains_source_row_and_only_atc_state():
     req = make_request("P0")
     _, gw = decide(req, decision("COUNTER", ["P1"]))
     payload = json.loads(gw.calls[0]["user_json"])
-    assert list(payload) == ["role", "shared", "current_proposal", "atc_state", "other_candidates", "output_contract"]
-    assert [c["plan_id"] for c in payload["other_candidates"]] == ["P1", "P2"]
-    assert len(payload["current_proposal"]["checks"]) == 8
-    p1 = payload["other_candidates"][0]
-    assert p1["checks"] == [] and p1["passing_check_count"] == 8 and p1["atc_hard_checks_pass"] is True
-    assert payload["shared"]["source_rows"][0]["raw"]["WEATHER_DELAY"] == "35"
-    assert payload["current_proposal"]["plan_id"] == "P0"
-    assert payload["current_proposal"]["atc_hard_checks_pass"] is False
+    # Same layout as the pilot/ground adapters and the coordinator's offline gateway.
+    assert list(payload) == ["source_and_scenario", "current_proposal", "atc_domain_state",
+                             "candidates", "output_schema", "final_reminder"]
+    assert payload["current_proposal"] == {
+        "round_index": 1, "proposal_id": req.proposal_id,
+        "current_plan_id": "P0", "current_plan_hash": req.current_plan_hash,
+    }
+    assert [c["plan"]["plan_id"] for c in payload["candidates"]] == ["P0", "P1", "P2"]
+    assert all(c["report"]["role"] == "atc" and len(c["report"]["checks"]) == 8 for c in payload["candidates"])
+    assert payload["source_and_scenario"]["shared"]["source_rows"][0]["raw"]["WEATHER_DELAY"] == "35"
     for other_domain_field in ("reserve_kg", "fuel_at_earliest_landing_kg", "crew_id", "occupied_windows"):
         assert other_domain_field not in gw.calls[0]["user_json"]
 
@@ -122,7 +124,20 @@ def test_round_two_includes_original_previous_messages():
     _, gw = decide(req, decision("ACCEPT"))
     payload = json.loads(gw.calls[0]["user_json"])
     assert payload["previous_messages"][0]["decision"]["reason"] == "fuel margin"
-    assert list(payload)[-2:] == ["previous_messages", "output_contract"]
+    assert list(payload)[-3:] == ["previous_messages", "output_schema", "final_reminder"]
+    assert payload["current_proposal"]["round_index"] == 2
+
+
+def test_round_one_omits_previous_messages():
+    _, gw = decide(make_request("P1"), decision("ACCEPT"))
+    assert "previous_messages" not in json.loads(gw.calls[0]["user_json"])
+
+
+def test_rejected_vote_keeps_original_model_output():
+    with pytest.raises(AgentProtocolError) as err:
+        decide(make_request("P0"), decision("ACCEPT", reason="looks fine"))
+    assert err.value.code == "INVALID_ACCEPT"
+    assert err.value.result.decision.reason == "looks fine"
 
 
 @pytest.mark.parametrize("current, bad, code", [

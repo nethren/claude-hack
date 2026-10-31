@@ -19,9 +19,9 @@ from contracts.models import (
     ModelDecision,
     ModelGateway,
 )
-from domains.atc import METRIC_KEYS, RULES_VERSION, hard_checks_pass
+from domains.atc import RULES_VERSION, hard_checks_pass
 
-PROMPT_VERSION = "atc-prompt-1.1"
+PROMPT_VERSION = "atc-prompt-1.2"
 MAX_OUTPUT_TOKENS = 800
 
 SYSTEM_PROMPT = """\
@@ -36,79 +36,50 @@ COUNTER with ranked IDs of other locally valid catalog plans when a change helps
 REJECT if no candidate can be validated locally. Explain uncertainty explicitly.
 Use only supplied candidate IDs and check IDs. Never invent or edit source facts,
 hard limits, reports or other agents' votes. Do not claim another domain passed.
+Return only JSON matching ModelDecision. End after this single model call.
+
+ATC hard checks: ATC_RUNWAY (runway occupancy [landing, landing + occupancy)
+inside an open runway window), ATC_WAKE (landings sorted by time; each adjacent
+gap >= max(runway occupancy, separation_min[leader][follower])) and ATC_TAXI
+(taxi traversal [landing, landing + taxi_in) avoids the route's blocked windows).
+Metrics: throughput_count (arrivals before the horizon, higher is better) and
+additional_delay_min (lower is better); both are soft preferences, not vetoes.
+For ACCEPT and REJECT, ranked_alternative_ids must be empty. For COUNTER, list
+one or more plan IDs other than the current plan whose ATC hard checks all PASS.
 Cite at most 3 check IDs, copied exactly. For ACCEPT, cite only checks of the
 current proposal; for COUNTER, only checks of the current proposal or your ranked
-alternatives. Keep reason and uncertainty to a few sentences each.
-Return only JSON matching ModelDecision. End after this single model call."""
-
-_RULES = {
-    "ATC_RUNWAY": "Runway occupancy [landing, landing + runway_occupancy_min) lies inside an open runway window.",
-    "ATC_WAKE": "Landings sorted by time; each adjacent gap >= max(runway_occupancy_min, separation_min[leader][follower]).",
-    "ATC_TAXI": "Taxi traversal [landing, landing + taxi_in) must not overlap a blocked window on the assigned route.",
-}
-
-_OUTPUT_CONTRACT = {
-    "schema": {
-        "verdict": "ACCEPT | COUNTER | REJECT",
-        "ranked_alternative_ids": "list of candidate plan_id, best first; [] for ACCEPT and REJECT",
-        "cited_check_ids": "0-3 check_id values copied exactly; ACCEPT: current proposal only; "
-                           "COUNTER: current proposal or ranked alternatives only",
-        "reason": "1-1000 characters",
-        "uncertainty": "0-500 characters",
-    },
-    "rules": [
-        "ACCEPT is valid only if every ATC hard check on the current proposal is PASS.",
-        "COUNTER must list only other candidates whose ATC hard checks all PASS.",
-        "Output a single JSON object and nothing else.",
-    ],
-}
-
-
-def _candidate_json(view: CandidateView, *, all_checks: bool) -> dict:
-    # Every ATC check is HARD and its evidence refs stay in the logged report, so
-    # both are omitted. Alternatives list only non-PASS checks plus a pass count:
-    # full check IDs carry two 64-char hashes and would push a 12-plan catalog
-    # past the 8,000-token context target.
-    checks = view.report.checks if all_checks else [c for c in view.report.checks if c.status != "PASS"]
-    body = {
-        "plan_id": view.plan.plan_id,
-        "plan_hash": view.plan_hash,
-        "atc_hard_checks_pass": hard_checks_pass(view.report),
-        "assignments": [a.model_dump(mode="json") for a in view.plan.assignments],
-        "metrics": view.report.metrics,
-        "checks": [
-            c.model_dump(mode="json", include={"check_id", "status", "observed", "required"})
-            for c in checks
-        ],
-    }
-    if not all_checks:
-        body["passing_check_count"] = len(view.report.checks) - len(checks)
-    return body
+alternatives; for REJECT, failing ATC checks from any candidate.
+Keep reason and uncertainty brief: at most three short sentences each.
+Separation, runway and taxiway values are simulated scenario inputs."""
 
 
 def build_user_json(request: AgentRequest) -> str:
-    """Context in the section 6 order: role -> source envelope -> proposal -> own state/reports -> messages -> output."""
-    current = _current_view(request)
+    """Assemble the role context in the documented prompt order (team layout)."""
     payload = {
-        "role": {
-            "role": "atc",
+        "source_and_scenario": {
+            "scenario_id": request.scenario_id,
+            "scenario_version": request.scenario_version,
+            "scenario_hash": request.scenario_hash,
+            "shared": request.shared.model_dump(mode="json"),
+        },
+        "current_proposal": {
             "round_index": request.round_index,
             "proposal_id": request.proposal_id,
-            "rules_version": RULES_VERSION,
-            "hard_rules": _RULES,
-            "metric_keys": list(METRIC_KEYS),
+            "current_plan_id": request.current_plan_id,
+            "current_plan_hash": request.current_plan_hash,
         },
-        "shared": request.shared.model_dump(mode="json"),
-        "current_proposal": _candidate_json(current, all_checks=True),
-        "atc_state": request.domain.model_dump(mode="json"),
-        "other_candidates": [
-            _candidate_json(v, all_checks=False)
-            for v in request.candidates if v.plan.plan_id != current.plan.plan_id
-        ],
+        "atc_domain_state": request.domain.model_dump(mode="json"),
+        "candidates": [c.model_dump(mode="json") for c in request.candidates],
     }
-    if request.previous_messages:
-        payload["previous_messages"] = [m.model_dump(mode="json") for m in request.previous_messages]
-    payload["output_contract"] = _OUTPUT_CONTRACT
+    if request.round_index == 2:
+        payload["previous_messages"] = [
+            m.model_dump(mode="json") for m in request.previous_messages
+        ]
+    payload["output_schema"] = ModelDecision.model_json_schema()
+    payload["final_reminder"] = (
+        "Return only ModelDecision JSON. ACCEPT requires every ATC HARD check "
+        "on the current plan to PASS. Hard limits are not negotiable."
+    )
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
 
 
@@ -198,7 +169,13 @@ class ATCAgent:
             timeout_s=request.call_timeout_ms / 1000,
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
-        validate_decision(result.decision, request)
+        try:
+            validate_decision(result.decision, request)
+        except AgentProtocolError as exc:
+            # Keep the original model output for the evidence log; the vote
+            # itself is still rejected.
+            exc.result = result
+            raise
         return AgentReply(
             protocol_version=request.protocol_version,
             run_id=request.run_id,
