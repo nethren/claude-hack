@@ -220,6 +220,9 @@ class DomainAgent(Protocol):
     ) -> AgentReply: ...
 
 def plan_hash(plan: Plan) -> str:
+    ids = [a.flight_id for a in plan.assignments]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"plan {plan.plan_id} has duplicate flight assignments")
     body = {"assignments": [
         a.model_dump(mode="json")
         for a in sorted(plan.assignments, key=lambda a: a.flight_id)
