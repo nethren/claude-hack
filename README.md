@@ -10,11 +10,6 @@ modelled fuel/CO₂ estimate.
 
 ![Groundline running the three scenarios with live Claude agents](docs/media/groundline-demo.gif)
 
-All three scenarios run against live Claude agents on 31 Oct 2026, recorded with
-Playwright. Waits for agent replies are shown at 8x and the rest at 2.5x; each
-stretch is labelled. Full quality: [sped-up MP4](docs/media/groundline-demo.mp4),
-[real-time MP4](docs/media/groundline-demo-realtime.mp4) (2 min 10 s, uncut).
-
 ## How it works
 
 | Part | Uses an LLM for | Code is responsible for |
