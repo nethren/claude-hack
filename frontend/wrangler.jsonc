@@ -1,0 +1,13 @@
+// Cloudflare Workers static-assets deploy of the hosted demo.
+// From frontend/: npm run deploy  (first time: npx wrangler login)
+{
+  "name": "groundline",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "groundline.nethren.com", "custom_domain": true }
+  ]
+}

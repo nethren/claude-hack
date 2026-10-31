@@ -33,13 +33,37 @@ async function call(fetchImpl, path, init) {
   return response.json();
 }
 
-export function backendHealth({fetchImpl=fetch}={}) { return call(fetchImpl, '/health'); }
-export function loadScenario(id, {fetchImpl=fetch}={}) { return call(fetchImpl, `/scenarios/demo/${id}`); }
+// Hosted static build (vite build --mode static): no backend exists, so each
+// scenario replays a run recorded by frontend/scripts/record-runs.py. The
+// files are unaltered API output; the app never holds an API key.
+export const STATIC_DEMO=import.meta.env?.VITE_STATIC_DEMO==='1';
+
+async function recordedRun(fetchImpl, id) {
+  const response=await fetchImpl(`/data/runs/${id}.json`);
+  if(!response.ok)throw new BackendError(`Recorded run for "${id}" is missing (HTTP ${response.status}).`, response.status);
+  return response.json();
+}
+
+export async function backendHealth({fetchImpl=fetch}={}) {
+  if(STATIC_DEMO) {
+    const run=await recordedRun(fetchImpl, SCENARIOS[0].id);
+    return { status:'ok', mode:'recorded', recorded:run.recorded };
+  }
+  return call(fetchImpl, '/health');
+}
+export async function loadScenario(id, {fetchImpl=fetch}={}) {
+  if(STATIC_DEMO)return (await recordedRun(fetchImpl, id)).scenario;
+  return call(fetchImpl, `/scenarios/demo/${id}`);
+}
 
 // Runs the real coordinator: the three agents are invoked server-side (live
 // Claude or the offline test double, per the server's COORDINATOR_MODE). The
 // returned bundle has the same shape as the recorded fixtures.
 export async function runLiveScenario(id, {fetchImpl=fetch, scenario=null}={}) {
+  if(STATIC_DEMO) {
+    const run=await recordedRun(fetchImpl, id);
+    return { kind:'recorded-run', recorded:run.recorded, scenario:run.scenario, result:run.result, events:run.events, fuel:run.fuel };
+  }
   const input=scenario||await loadScenario(id,{fetchImpl});
   const result=await call(fetchImpl, '/runs', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(input)});
   const [events, fuel]=await Promise.all([

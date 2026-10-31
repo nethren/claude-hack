@@ -206,21 +206,25 @@ export default function App() {
   const summary=result.metrics;
   const reopens=runwayClosedUntil(scenario);
   const t2Closed=scenario.atc.routes.find((r)=>r.route_id==='T2')?.blocked_windows.some((w)=>w.start_min<=0&&w.end_min>=scenario.shared.horizon_end_min);
-  const live=health?.mode==='live';
+  const recorded=health?.mode==='recorded';
+  const live=health?.mode==='live'||(recorded&&health.recorded?.mode==='live');
+  const recordedOn=recorded&&health.recorded?.at?new Date(health.recorded.at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'';
+  const modeLong=health===null?'Connecting…':health.mode==='unreachable'?'Backend offline':recorded?(live?'Recorded live Claude run':'Recorded test run'):live?'Live Claude agents':'Offline test agents';
+  const modeShort=health===null?'…':health.mode==='unreachable'?'Offline':recorded?'Recorded':live?'Live':'Test';
   const title=status==='idle'?'Ready to run':status==='waiting'?`Agents reviewing ${initialId}…`:status==='running'?round===1?`Reviewing ${initialId}`:`Reviewing ${revisedId}`:status==='moving'?'Aircraft moving':escalated?'Escalated to controller':'Scenario complete';
 
   return <div className={`application ${escalated&&!acknowledged?'application-escalated':''}`}>
     <header className="app-header">
       <a className="brand" href="/" aria-label="Groundline dashboard"><span className="brand-icon" aria-hidden="true"><i/><i/><i/></span>groundline<span className="brand-period">.</span></a>
       <div className="airport-title"><strong>DFW</strong><span>Dallas Fort Worth</span></div>
-      <span className={`mode-badge mode-${health?.mode||'pending'}`} title={health===null?'Connecting…':health.mode==='unreachable'?'Backend offline':live?'Live Claude agents':'Offline test agents'}>
-        <span className="mode-long">{health===null?'Connecting…':health.mode==='unreachable'?'Backend offline':live?'Live Claude agents':'Offline test agents'}</span>
-        <span className="mode-short">{health===null?'…':health.mode==='unreachable'?'Offline':live?'Live':'Test'}</span>
+      <span className={`mode-badge mode-${recorded&&live?'live':health?.mode||'pending'}`} title={modeLong}>
+        <span className="mode-long">{modeLong}</span>
+        <span className="mode-short">{modeShort}</span>
       </span>
       <details className="run-details"><summary><Info size={15}/>Details</summary><div className="details-panel">
         <h2>Run details</h2>
-        <dl><div><dt>Flights</dt><dd>DOT 2015 callsigns</dd></div><div><dt>Traffic & movement</dt><dd>Simulated</dd></div><div><dt>Agents</dt><dd>{live?'Live Claude calls':'Offline test double'}</dd></div><div><dt>Backend</dt><dd>{health?.mode==='unreachable'?'Not reachable':'Connected'}</dd></div><div><dt>Outcome</dt><dd>{done?result.outcome:'Pending'}</dd></div><div><dt>Model calls</dt><dd>{done?`${result.model_calls_completed} / ${result.model_calls_attempted}`:0}</dd></div></dl>
-        <p>Each run sends the scenario to the coordinator, which invokes the ATC, Pilot and Ground agents independently and checks every reply in code.</p>
+        <dl><div><dt>Flights</dt><dd>DOT 2015 callsigns</dd></div><div><dt>Traffic & movement</dt><dd>Simulated</dd></div><div><dt>Agents</dt><dd>{live?'Live Claude calls':'Offline test double'}</dd></div><div><dt>Backend</dt><dd>{recorded?`Recorded run${recordedOn?`, ${recordedOn}`:''}`:health?.mode==='unreachable'?'Not reachable':'Connected'}</dd></div><div><dt>Outcome</dt><dd>{done?result.outcome:'Pending'}</dd></div><div><dt>Model calls</dt><dd>{done?`${result.model_calls_completed} / ${result.model_calls_attempted}`:0}</dd></div></dl>
+        <p>{recorded?'This hosted copy replays one recorded run per scenario. In that run the coordinator invoked the ATC, Pilot and Ground agents independently and checked every reply in code. Nothing is re-run in your browser.':'Each run sends the scenario to the coordinator, which invokes the ATC, Pilot and Ground agents independently and checks every reply in code.'}</p>
         <p>Flight labels come from rows 76, 20 and 49. Routes use the DFW map as a visual guide. Fuel and CO₂ are modelled estimates.</p>
         <button className="text-button" onClick={()=>exportEvidence(bundle)}><Download size={14}/>Export evidence</button>
       </div></details>

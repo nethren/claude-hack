@@ -1,8 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+// `vite build --mode static` produces the hosted copy: it replays the recorded
+// runs in public/data/runs instead of calling the Python backend.
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  define: {
+    'import.meta.env.VITE_STATIC_DEMO': JSON.stringify(mode === 'static' ? '1' : ''),
+  },
   server: {
     proxy: {
       '/api': {
@@ -12,4 +17,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

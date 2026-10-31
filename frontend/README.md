@@ -49,6 +49,19 @@ plus each agent's own reason. Expand a message's checks or **Why this plan?**
 for the supporting evidence. **Details** holds the data scope, model-call count
 and evidence export.
 
+## Hosted demo (groundline.nethren.com)
+
+The hosted copy has no backend. `npm run build:static` builds a version that
+replays `public/data/runs/{clear,counter,escalate}.json`, one recorded run per
+scenario, and labels itself "Recorded live Claude run" or "Recorded test run".
+These files are unaltered API output. No API key is in the build.
+
+To re-record (for example after changing an agent), start the backend with
+`python -m dev.serve --live`, then from the repository root run
+`python frontend/scripts/record-runs.py`. Deploy from `frontend/` with
+`npm run deploy` (first time: `npx wrangler login`). `wrangler.jsonc` serves
+`dist/` as Cloudflare Workers static assets on the custom domain.
+
 ## Data and evidence
 
 `public/data/demo-run.json` and `demo-crew.json` contain actual coordinator outputs
