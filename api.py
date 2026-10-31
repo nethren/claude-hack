@@ -17,6 +17,7 @@ from app import default_agents
 from contracts.models import ScenarioInput
 from runtime.catalog import explain_comparison
 from runtime.coordinator import run_negotiation
+from runtime.demo_scenarios import demo_catalog, demo_scenario
 from runtime.model_gateway import gateway_from_environment
 from runtime.models import RunResult
 from runtime.scenario_loader import EXAMPLE
@@ -47,6 +48,17 @@ def create_app(*, model=None, agents=None, log_dir=Path("logs")):
     @server.get("/scenarios/example", response_model=ScenarioInput)
     async def example():
         return ScenarioInput.model_validate_json(EXAMPLE.read_bytes())
+
+    @server.get("/scenarios/demo")
+    async def demos():
+        return demo_catalog()
+
+    @server.get("/scenarios/demo/{demo_id}", response_model=ScenarioInput)
+    async def demo(demo_id: str):
+        try:
+            return demo_scenario(demo_id)
+        except KeyError:
+            raise HTTPException(404, "Unknown demo scenario")
 
     @server.post("/runs", response_model=RunResult)
     async def run(scenario: ScenarioInput):
