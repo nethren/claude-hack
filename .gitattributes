@@ -1,0 +1,3 @@
+# Source datasets are hash-verified (references/source-manifest.json).
+# Keep their committed bytes exactly; never convert line endings on checkout.
+data/raw/*.csv -text
