@@ -176,7 +176,7 @@ class AgentRequest(Wire):
     proposal_id: str
     current_plan_id: str
     current_plan_hash: Digest
-    call_timeout_ms: Annotated[int, Field(ge=1, le=15000)]
+    call_timeout_ms: Annotated[int, Field(ge=1, le=25000)]
     shared: SharedInput
     domain: DomainState
     candidates: Annotated[list[CandidateView], Field(min_length=1, max_length=12)]

@@ -178,9 +178,9 @@ contract; a builder may use one internally only if it obeys the same call budget
 | Negotiation rounds | 2 | Proposed interpretation of source "under 3 turns" |
 | Model calls | At most 6 | One independent call per role per round |
 | Automatic SDK/model retries | 0 | Disable hidden retries; malformed output goes to fallback |
-| Per-call timeout | 15 seconds | Includes transport and response parsing |
-| Negotiation budget | 35 seconds | Monotonic deadline across both rounds |
-| Whole-run budget | 40 seconds | Leaves up to 5 seconds for fallback, validation and logging |
+| Per-call timeout | 25 seconds (raised from 15, DEC-21) | Includes transport and response parsing |
+| Negotiation budget | 60 seconds (raised from 35) | Monotonic deadline across both rounds |
+| Whole-run budget | 70 seconds (raised from 40) | Leaves up to 10 seconds for fallback, validation and logging |
 | Model output cap | 1,600 tokens/call | Matches integrated Pilot/Ground adapters; schema validation still applies |
 | Input context cap | At most 16,000 tokens/call (raised from 8,000, DEC-19) | Live gateway counts complete prompts with provider; unavailable/oversize count invokes fallback |
 
@@ -366,7 +366,7 @@ class AgentRequest(Wire):
     proposal_id: str
     current_plan_id: str
     current_plan_hash: Digest
-    call_timeout_ms: Annotated[int, Field(ge=1, le=15000)]
+    call_timeout_ms: Annotated[int, Field(ge=1, le=25000)]
     shared: SharedInput
     domain: DomainState
     candidates: Annotated[list[CandidateView], Field(min_length=1, max_length=12)]

@@ -206,7 +206,7 @@ async def run_negotiation(scenario, agents, model, *, budgets=None, log_dir=None
             req = AgentRequest(protocol_version="1.0", run_id=run_id, request_id=f"{proposal}:{role}",
                 role=role, scenario_id=s.scenario_id, scenario_version=s.scenario_version, scenario_hash=digest,
                 round_index=round_index, proposal_id=proposal, current_plan_id=current.plan_id,
-                current_plan_hash=plan_hash(current), call_timeout_ms=max(1, min(15000, int(timeout*1000))),
+                current_plan_hash=plan_hash(current), call_timeout_ms=max(1, min(int(budgets.call_s*1000), int(timeout*1000))),
                 shared=s.shared, domain=getattr(s, role),
                 candidates=[CandidateView(plan=p, plan_hash=plan_hash(p), report=reports[p.plan_id][index]) for p in s.plans],
                 previous_messages=previous)

@@ -120,8 +120,8 @@ The initial engineering limits are:
 - Two negotiation rounds.
 - At most six model calls: three agents times two rounds.
 - No automatic model retries.
-- Up to 15 seconds per call, shortened by the remaining negotiation budget.
-- A 35-second negotiation budget and 40-second whole-run budget.
+- Up to 25 seconds per call, shortened by the remaining negotiation budget.
+- A 60-second negotiation budget and 70-second whole-run budget (raised from 15/35/40 after live runs; DEC-21).
 
 These are design defaults that still need runtime measurements. The brief's
 phrase "under 3 turns" remains ambiguous. We display both round counts and

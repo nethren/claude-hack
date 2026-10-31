@@ -21,7 +21,7 @@ from contracts.models import (
 )
 from domains.atc import RULES_VERSION, hard_checks_pass
 
-PROMPT_VERSION = "atc-prompt-1.4"
+PROMPT_VERSION = "atc-prompt-1.5"
 MAX_OUTPUT_TOKENS = 800
 
 SYSTEM_PROMPT = """\
@@ -46,13 +46,15 @@ Metrics: throughput_count (arrivals before the horizon, higher is better) and
 additional_delay_min (lower is better); both are soft preferences, not vetoes.
 For ACCEPT and REJECT, ranked_alternative_ids must be empty. For COUNTER, list
 one or more plan IDs other than the current plan whose ATC hard checks all PASS.
-Cite at most 3 check IDs, copied exactly. For ACCEPT, cite only checks of the
-current proposal; for COUNTER, only checks of the current proposal or your ranked
-alternatives; for REJECT, failing ATC checks from any candidate.
+Cite exactly one check ID, copied exactly: the single check that decides your
+verdict. For ACCEPT, a check of the current proposal; for COUNTER, a check of the
+current proposal or your first ranked alternative; for REJECT, a failing ATC
+check from any candidate.
 Always write reason and uncertainty: each is one to three short sentences and
 must never be an empty string. The reason names the deciding checks or metrics.
-Output the bare JSON object only: start with { and end with }, with no Markdown,
-code fences or text around it.
+Output the bare JSON object only, keys in this order: verdict, reason,
+uncertainty, ranked_alternative_ids, cited_check_ids. Start with { and end with },
+with no Markdown, code fences or text around it.
 Separation, runway and taxiway values are simulated scenario inputs."""
 
 
@@ -81,7 +83,7 @@ def build_user_json(request: AgentRequest) -> str:
     payload["output_schema"] = ModelDecision.model_json_schema()
     payload["final_reminder"] = (
         "Return only the bare ModelDecision JSON object (no code fences) with "
-        "non-empty reason and uncertainty. "
+        "non-empty reason and uncertainty, listing exactly one cited check ID last. "
         "ACCEPT requires every ATC HARD check on the current plan to PASS. "
         "Hard limits are not negotiable."
     )

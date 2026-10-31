@@ -52,7 +52,7 @@ def test_reserved_deadline_never_returns_an_unfinished_validation(tmp_path, monk
         calls += 1
         r = original(*args, **kwargs)
         if calls >= 4:
-            clock.value = 41
+            clock.value = Budgets().whole_run_s + 1  # just past the run deadline
         return r
     monkeypatch.setattr(coordinator, "evaluate", expire_final)
     r = asyncio.run(run_negotiation(EXAMPLE, default_agents(), OfflineGateway(), log_dir=tmp_path))

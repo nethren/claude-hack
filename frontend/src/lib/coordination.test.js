@@ -190,3 +190,8 @@ test('a pending scenario preview has no outcome or reports',()=>{
   const p=pendingResult();
   assert.equal(p.outcome,null);assert.deepEqual(p.candidate_reports,{});assert.equal(p.selected_plan,null);
 });
+test('a run that ends after round 1 has no round-2 proposal to show',()=>{
+  const closed=data('demo-closed.json');
+  assert.equal(proposedPlan(closed,2),null);
+  assert.equal(displayPlan(closed,5).plan_id,closed.scenario.initial_plan_id);
+});

@@ -48,7 +48,7 @@ class AnthropicGateway:
         if not model or not api_key:
             raise ValueError("Set ANTHROPIC_MODEL and ANTHROPIC_API_KEY for live mode")
         self.model, self._api_key = model, api_key
-        # Explicit effort keeps live calls inside the 15 s per-call budget: at the
+        # Explicit effort keeps live calls inside the per-call budget: at the
         # model's default (medium on claude-opus-5-5) the 12k-token pilot prompt
         # timed out in 3/3 live runs. None omits the field (model default).
         self.effort = effort

@@ -20,7 +20,7 @@ modelled fuel/CO₂ estimate.
 Each agent answers ACCEPT, COUNTER (ranked safe alternatives) or REJECT. A vote that
 accepts a plan failing its own checks, cites a check that does not exist or is malformed
 is rejected in code. Consensus needs all three to accept the same plan plus a final
-re-check. Runs are bounded: at most 2 rounds and 6 model calls, no retries, 40 s.
+re-check. Runs are bounded: at most 2 rounds and 6 model calls, no retries, 70 s.
 Every result is a recommendation for a controller; nothing is executed.
 
 ## Run the demo
@@ -76,8 +76,8 @@ lookup joins, Markdown links and requirement coverage.
 
 Agents choose from a bounded catalog of plans, so an escalation does not prove no
 feasible plan exists. Fuel is a holding-only model. The ranking order is a prototype
-policy, not an aviation standard. The Pilot agent can exceed the 15 s per-call limit in
-round 2, which ends the run in a safe fallback. See [backend notes](docs/backend.md) and
+policy, not an aviation standard. A live agent that exceeds the 25 s per-call limit or
+returns malformed JSON ends the run in a safe fallback. See [backend notes](docs/backend.md) and
 the [decision log](docs/decision-log.md).
 
 ## Start here

@@ -3,7 +3,7 @@ import { ArrowRight, ArrowUpRight, Check, ChevronDown, Clock3, Download, Fuel, H
   RadioTower, ShieldCheck, Siren, TriangleAlert, Truck, X } from 'lucide-react';
 import AirportMap from './AirportMap.jsx';
 import { alternativeSummary, blockingRules, clockLabel, displayPlan, flightIdentity, flightLabel, fuelDeadlines,
-  groupedChecks, pendingResult, reportFor, ROLES, runwayClosedUntil } from './lib/coordination.js';
+  groupedChecks, pendingResult, proposedPlan, reportFor, ROLES, runwayClosedUntil } from './lib/coordination.js';
 import { FLIGHT_IDENTITIES } from './lib/flight-identities.js';
 import { aircraftPosition } from './lib/movement.js';
 import { backendHealth, conciseReason, currentAgentVerdict, loadScenario, runEndMinute, runLiveScenario,
@@ -194,7 +194,8 @@ export default function App() {
   const scenario=bundle.scenario,result=bundle.result,currentPlan=displayPlan(bundle,phase);
   const meta=SCENARIOS.find((s)=>s.id===scenarioId);
   const initialId=scenario.initial_plan_id;
-  const revisedId=currentPlan.plan_id;
+  // Round 2 exists only when the coordinator published a second proposal.
+  const revised=proposedPlan(bundle,2),revisedId=revised?.plan_id||currentPlan.plan_id;
   const focus=currentPlan.assignments.find((a)=>a.flight_id===selected)||currentPlan.assignments[0],identity=flightIdentity(scenario,focus.flight_id);
   const position=aircraftPosition(layout,focus,scenario.shared,clock);
   const active=['waiting','running','moving'].includes(status);
@@ -264,9 +265,9 @@ export default function App() {
             <div className="round-label">Initial plan <span>{initialId}</span></div>
             {messages.filter((r)=>r.round_index===1).map((reply)=><AgentMessage key={reply.request_id} bundle={bundle} reply={reply}/>)}
             {messages.length===0&&<div className="reviewing-message"><span className="reviewing-dots"><i/><i/><i/></span>{status==='waiting'?`ATC, Pilot and Ground are reviewing ${initialId}${live?' with live model calls':''}… ${waited}s`:`Agents are checking ${initialId}.`}</div>}
-            {phase>=3&&<><div className="proposal-message"><WaypointsIcon/><div><strong>Coordinator proposes {revisedId}</strong><p>Chosen from the agents’ counteroffers by the fixed ranking policy, not by vote.</p></div></div><div className="round-label">Revised plan <span>{revisedId}</span></div></>}
+            {phase>=3&&revised&&<><div className="proposal-message"><WaypointsIcon/><div><strong>Coordinator proposes {revisedId}</strong><p>Chosen from the agents’ counteroffers by the fixed ranking policy, not by vote.</p></div></div><div className="round-label">Revised plan <span>{revisedId}</span></div></>}
             {messages.filter((r)=>r.round_index===2).map((reply)=><AgentMessage key={reply.request_id} bundle={bundle} reply={reply}/>)}
-            {phase>=3&&phase<5&&<div className="reviewing-message"><span className="reviewing-dots"><i/><i/><i/></span>Waiting for fresh approvals.</div>}
+            {phase>=3&&phase<5&&revised&&<div className="reviewing-message"><span className="reviewing-dots"><i/><i/><i/></span>Waiting for fresh approvals.</div>}
             {done&&!escalated&&<div className={`agreement-message ${approved?'agreement-approved':'agreement-other'}`}><ShieldCheck size={19}/><div><strong>{approved?`${result.selected_plan_id} approved`:'Checked fallback'}</strong><p>{approved?`ATC, Pilot and Ground agree${result.rounds_completed===1?' in round 1':' after counteroffers'}.`:`No unanimous agreement (${(result.reason_code||'').replaceAll('_',' ').toLowerCase()}). Code selected the best plan that passes every check.`}</p></div></div>}
             {escalated&&<EscalationAlert bundle={bundle} acknowledged={acknowledged} onAcknowledge={()=>setAcknowledged(true)}/>}
           </>}

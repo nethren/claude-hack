@@ -144,8 +144,8 @@ There is no claim the catalog covers every possible disruption.
 ## Budgets and evidence
 
 Two rounds; at most six generation attempts; no retries or repair calls;
-15 seconds per role invocation; 35-second negotiation budget; 40-second whole-run
-budget. The shared output cap is 1,600 tokens, matching the merged adapters and
+25 seconds per role invocation; 60-second negotiation budget; 70-second whole-run
+budget (raised from 15/35/40 after live timeouts; DEC-21). The shared output cap is 1,600 tokens, matching the merged adapters and
 resolving the earlier 800-token documentation mismatch. Time defaults remain
 unbenchmarked against live models.
 

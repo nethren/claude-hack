@@ -9,9 +9,11 @@ from contracts.models import AgentReply, DomainReport, Plan, Usage, Wire
 
 @dataclass(frozen=True)
 class Budgets:
-    call_s: float = 15
-    negotiation_s: float = 35
-    whole_run_s: float = 40
+    # Raised from 15/35/40 (DEC-21): live Pilot calls take 11-14 s and two rounds
+    # of three parallel calls plus token counting did not fit 15 s per call.
+    call_s: float = 25
+    negotiation_s: float = 60
+    whole_run_s: float = 70
     output_tokens: int = 1600
     input_bytes: int = 64000  # Conservative UTF-8 token upper bound, not chars/4.
     # Raised from 8,000 (DEC-19): measured live prompts on the 3-plan fixture are
@@ -20,9 +22,9 @@ class Budgets:
     input_tokens: int = 16000
 
     def __post_init__(self):
-        if not (0 < self.call_s <= 15 and
-                0 < self.negotiation_s < self.whole_run_s <= 40):
-            raise ValueError("Require call <= 15s and 0 < negotiation < whole run <= 40s")
+        if not (0 < self.call_s <= 25 and
+                0 < self.negotiation_s < self.whole_run_s <= 70):
+            raise ValueError("Require call <= 25s and 0 < negotiation < whole run <= 70s")
         if not (0 < self.output_tokens <= 1600 and
                 0 < self.input_tokens <= 16000 and self.input_bytes > 0):
             raise ValueError("Invalid context/output budget")
