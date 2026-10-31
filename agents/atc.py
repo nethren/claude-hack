@@ -21,7 +21,7 @@ from contracts.models import (
 )
 from domains.atc import METRIC_KEYS, RULES_VERSION, hard_checks_pass
 
-PROMPT_VERSION = "atc-prompt-1.0"
+PROMPT_VERSION = "atc-prompt-1.1"
 MAX_OUTPUT_TOKENS = 800
 
 SYSTEM_PROMPT = """\
@@ -36,6 +36,9 @@ COUNTER with ranked IDs of other locally valid catalog plans when a change helps
 REJECT if no candidate can be validated locally. Explain uncertainty explicitly.
 Use only supplied candidate IDs and check IDs. Never invent or edit source facts,
 hard limits, reports or other agents' votes. Do not claim another domain passed.
+Cite at most 3 check IDs, copied exactly. For ACCEPT, cite only checks of the
+current proposal; for COUNTER, only checks of the current proposal or your ranked
+alternatives. Keep reason and uncertainty to a few sentences each.
 Return only JSON matching ModelDecision. End after this single model call."""
 
 _RULES = {
@@ -48,7 +51,8 @@ _OUTPUT_CONTRACT = {
     "schema": {
         "verdict": "ACCEPT | COUNTER | REJECT",
         "ranked_alternative_ids": "list of candidate plan_id, best first; [] for ACCEPT and REJECT",
-        "cited_check_ids": "check_id values copied exactly from the reports above",
+        "cited_check_ids": "0-3 check_id values copied exactly; ACCEPT: current proposal only; "
+                           "COUNTER: current proposal or ranked alternatives only",
         "reason": "1-1000 characters",
         "uncertainty": "0-500 characters",
     },
