@@ -26,10 +26,12 @@ required common row parameters merely to manufacture disagreement.
 
 ## Proposed topology (not yet implemented)
 
-The current recommendation is a deterministic coordinator plus three LLM domain
-agents. The coordinator controls state transitions, routing, deadlines and final
-validation. Agents exchange structured proposals, objections and counteroffers
-through it. Framework/provider/model selection remains open.
+The [protocol 1.0 architecture](ai-orchestration-architecture.md) specifies a
+deterministic coordinator plus three LLM domain agents, using direct async Python
+interfaces for teammate integration. The coordinator controls state transitions,
+routing, deadlines and final validation. Agents exchange structured proposals,
+objections and counteroffers through it. Provider/model selection remains open;
+an agent framework is optional behind the shared interface.
 
 ```mermaid
 flowchart TD
@@ -66,10 +68,12 @@ than having a supervisor paraphrase them.
 | MA-11 | Label consensus, fallback solution and no-feasible-plan as distinct outcomes. | Avoid false agreement; C2-05, C2-08 |
 | MA-12 | Measure calls, tokens, latency, validity and modelled objective outcomes against comparable baselines. | Coordination economics; JR-03, JR-05 |
 
-Suggested message fields (proposal, not an implemented API): `message_id`,
-`sender`, `recipient`, `scenario_version`, `proposal_id`, `proposal_hash`,
-`round`, `decision`, `proposed_changes`, `constraint_result_ids`,
-`preference_costs`, `source_refs`, `reason`, `timestamp`.
+The earlier message-field suggestions are superseded by the shared models in
+[the architecture](ai-orchestration-architecture.md). Use `run_id`, `request_id`,
+`role`, scenario version/hash, round/proposal identity, current plan ID/hash and
+the structured model decision. Actual rule records and deterministic metrics
+remain separate from the model's explanation. These are specified interfaces,
+not an implemented API.
 
 Validated source/rule IDs must resolve to actual records; a model citing a rule
 does not itself prove that the check ran. Runtime validation should keep immutable

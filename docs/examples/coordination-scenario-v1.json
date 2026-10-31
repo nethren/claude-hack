@@ -1,0 +1,363 @@
+{
+  "protocol_version": "1.0",
+  "scenario_id": "dfw-disruption-seed-76",
+  "scenario_version": 1,
+  "initial_plan_id": "P0",
+  "shared": {
+    "airport_iata": "DFW",
+    "horizon_end_min": 40,
+    "source_rows": [
+      {
+        "source_id": "seed-76",
+        "dataset_sha256": "bfb7fc2112a1a98b748fa1c5bbba57f6f8f14acbd6419ea4cf84f4470ed5d79e",
+        "csv_row_number": 76,
+        "raw": {
+          "YEAR": "2015",
+          "MONTH": "1",
+          "DAY": "1",
+          "DAY_OF_WEEK": "4",
+          "AIRLINE": "AA",
+          "FLIGHT_NUMBER": "1344",
+          "TAIL_NUMBER": "N200AA",
+          "ORIGIN_AIRPORT": "DEN",
+          "DESTINATION_AIRPORT": "DFW",
+          "SCHEDULED_DEPARTURE": "1735",
+          "DEPARTURE_TIME": "1850",
+          "DEPARTURE_DELAY": "75",
+          "TAXI_OUT": "52",
+          "WHEELS_OFF": "1942",
+          "SCHEDULED_TIME": "115",
+          "ELAPSED_TIME": "159",
+          "AIR_TIME": "95",
+          "DISTANCE": "641",
+          "WHEELS_ON": "2217",
+          "TAXI_IN": "12",
+          "SCHEDULED_ARRIVAL": "2030",
+          "ARRIVAL_TIME": "2229",
+          "ARRIVAL_DELAY": "119",
+          "DIVERTED": "0",
+          "CANCELLED": "0",
+          "CANCELLATION_REASON": "",
+          "AIR_SYSTEM_DELAY": "44",
+          "SECURITY_DELAY": "0",
+          "AIRLINE_DELAY": "0",
+          "LATE_AIRCRAFT_DELAY": "40",
+          "WEATHER_DELAY": "35"
+        }
+      }
+    ],
+    "flights": [
+      {
+        "flight_id": "F1",
+        "identity_origin": "source_csv",
+        "source_id": "seed-76",
+        "scheduled_landing_min": 10
+      },
+      {
+        "flight_id": "F2",
+        "identity_origin": "simulated",
+        "source_id": null,
+        "scheduled_landing_min": 12
+      },
+      {
+        "flight_id": "F3",
+        "identity_origin": "simulated",
+        "source_id": null,
+        "scheduled_landing_min": 22
+      }
+    ],
+    "options": {
+      "landing_min_by_flight": {
+        "F1": [
+          10,
+          14
+        ],
+        "F2": [
+          12,
+          14,
+          18
+        ],
+        "F3": [
+          22,
+          26
+        ]
+      },
+      "gate_out_min_by_flight": {
+        "F1": [
+          20,
+          24
+        ],
+        "F2": [
+          22,
+          24,
+          28
+        ],
+        "F3": [
+          32,
+          36
+        ]
+      },
+      "taxi_route_ids": [
+        "T1",
+        "T2"
+      ],
+      "gate_ids": [
+        "G1",
+        "G2"
+      ]
+    },
+    "taxi_in_min_by_route": {
+      "T1": 2,
+      "T2": 5
+    },
+    "disruption_note": "Historical flight row seeds a synthetic DFW arrival-coordination scenario. T2 is blocked. F1/F2 initially conflict on wake separation and gate G1. F2/F3 are simulated traffic; every operational time, fuel value, exposure, gate and crew value is synthetic.",
+    "simulated_fields": [
+      "shared.horizon_end_min",
+      "shared.flights[0].scheduled_landing_min",
+      "shared.flights[1]",
+      "shared.flights[2]",
+      "shared.options",
+      "shared.taxi_in_min_by_route",
+      "shared.disruption_note",
+      "atc",
+      "pilot",
+      "ground",
+      "plans"
+    ]
+  },
+  "atc": {
+    "role": "atc",
+    "runway_open_windows": [
+      {
+        "start_min": 0,
+        "end_min": 120
+      }
+    ],
+    "runway_occupancy_min": 1,
+    "wake_class_by_flight": {
+      "F1": "M",
+      "F2": "M",
+      "F3": "M"
+    },
+    "separation_min": {
+      "M": {
+        "M": 3
+      }
+    },
+    "routes": [
+      {
+        "route_id": "T1",
+        "taxi_in_min": 2,
+        "blocked_windows": [
+          {
+            "start_min": 0,
+            "end_min": 9
+          }
+        ]
+      },
+      {
+        "route_id": "T2",
+        "taxi_in_min": 5,
+        "blocked_windows": [
+          {
+            "start_min": 0,
+            "end_min": 120
+          }
+        ]
+      }
+    ]
+  },
+  "pilot": {
+    "role": "pilot",
+    "limits": [
+      {
+        "flight_id": "F1",
+        "earliest_landing_min": 10,
+        "fuel_at_earliest_landing_kg": 1000,
+        "reserve_kg": 700,
+        "holding_burn_kg_per_min": 50,
+        "max_turbulence_units": 3,
+        "turbulence_by_landing_min": {
+          "10": 2,
+          "14": 0
+        },
+        "connecting_passengers": 2,
+        "connection_deadline_min": 20,
+        "transfer_min": 5
+      },
+      {
+        "flight_id": "F2",
+        "earliest_landing_min": 12,
+        "fuel_at_earliest_landing_kg": 1400,
+        "reserve_kg": 1000,
+        "holding_burn_kg_per_min": 50,
+        "max_turbulence_units": 3,
+        "turbulence_by_landing_min": {
+          "12": 1,
+          "14": 1,
+          "18": 1
+        },
+        "connecting_passengers": 0,
+        "connection_deadline_min": null,
+        "transfer_min": null
+      },
+      {
+        "flight_id": "F3",
+        "earliest_landing_min": 22,
+        "fuel_at_earliest_landing_kg": 1000,
+        "reserve_kg": 800,
+        "holding_burn_kg_per_min": 50,
+        "max_turbulence_units": 3,
+        "turbulence_by_landing_min": {
+          "22": 0,
+          "26": 0
+        },
+        "connecting_passengers": 0,
+        "connection_deadline_min": null,
+        "transfer_min": null
+      }
+    ]
+  },
+  "ground": {
+    "role": "ground",
+    "gates": [
+      {
+        "gate_id": "G1",
+        "compatible_flight_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "occupied_windows": []
+      },
+      {
+        "gate_id": "G2",
+        "compatible_flight_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "occupied_windows": []
+      }
+    ],
+    "crews": [
+      {
+        "crew_id": "C1",
+        "available_windows": [
+          {
+            "start_min": 0,
+            "end_min": 120
+          }
+        ],
+        "shift_end_min": 30
+      },
+      {
+        "crew_id": "C2",
+        "available_windows": [
+          {
+            "start_min": 0,
+            "end_min": 120
+          }
+        ],
+        "shift_end_min": 40
+      }
+    ],
+    "services": [
+      {
+        "flight_id": "F1",
+        "crew_id": "C1",
+        "min_turnaround_min": 8
+      },
+      {
+        "flight_id": "F2",
+        "crew_id": "C2",
+        "min_turnaround_min": 8
+      },
+      {
+        "flight_id": "F3",
+        "crew_id": "C1",
+        "min_turnaround_min": 8
+      }
+    ]
+  },
+  "plans": [
+    {
+      "plan_id": "P0",
+      "assignments": [
+        {
+          "flight_id": "F1",
+          "landing_min": 10,
+          "taxi_route_id": "T1",
+          "gate_id": "G1",
+          "gate_out_min": 20
+        },
+        {
+          "flight_id": "F2",
+          "landing_min": 12,
+          "taxi_route_id": "T1",
+          "gate_id": "G1",
+          "gate_out_min": 22
+        },
+        {
+          "flight_id": "F3",
+          "landing_min": 22,
+          "taxi_route_id": "T1",
+          "gate_id": "G2",
+          "gate_out_min": 32
+        }
+      ]
+    },
+    {
+      "plan_id": "P1",
+      "assignments": [
+        {
+          "flight_id": "F1",
+          "landing_min": 10,
+          "taxi_route_id": "T1",
+          "gate_id": "G1",
+          "gate_out_min": 20
+        },
+        {
+          "flight_id": "F2",
+          "landing_min": 14,
+          "taxi_route_id": "T1",
+          "gate_id": "G2",
+          "gate_out_min": 24
+        },
+        {
+          "flight_id": "F3",
+          "landing_min": 22,
+          "taxi_route_id": "T1",
+          "gate_id": "G1",
+          "gate_out_min": 32
+        }
+      ]
+    },
+    {
+      "plan_id": "P2",
+      "assignments": [
+        {
+          "flight_id": "F1",
+          "landing_min": 14,
+          "taxi_route_id": "T1",
+          "gate_id": "G2",
+          "gate_out_min": 24
+        },
+        {
+          "flight_id": "F2",
+          "landing_min": 18,
+          "taxi_route_id": "T1",
+          "gate_id": "G1",
+          "gate_out_min": 28
+        },
+        {
+          "flight_id": "F3",
+          "landing_min": 26,
+          "taxi_route_id": "T1",
+          "gate_id": "G2",
+          "gate_out_min": 36
+        }
+      ]
+    }
+  ]
+}

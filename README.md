@@ -14,6 +14,7 @@ implemented or evaluated in this initial documentation commit.
 | [Judging rubric](docs/judging-rubric.md) | Official weights, scoring, strong/weak evidence |
 | [Dataset contract](docs/datasets.md) | All three CSV schemas, full-file checks, joins, limits and examples |
 | [Multi-agent constraints](docs/multi-agent-design-constraints.md) | Skill alignment and proposed coordination rules |
+| [AI orchestration architecture](docs/ai-orchestration-architecture.md) | Protocol 1.0, teammate ownership, shared types, domain tools, integration and failure contracts |
 | [Alignment checklist](docs/alignment-checklist.md) | Requirement-to-data-to-proof matrix |
 | [Decision log](docs/decision-log.md) | Confirmed context, proposals, assumptions and unresolved questions |
 | [Full track brief](docs/airbus-track-brief.md) | Normalized reference for all five challenges |
@@ -39,6 +40,12 @@ Readable complete lookup tables are available for
 [Flight examples](docs/data/flight-scenarios.md) preserve selected complete source
 rows and identify their original CSV row numbers. The full flights CSV is kept
 as the lossless source rather than duplicated into a very large Markdown table.
+
+For teammate implementation, start with the
+[architecture and shared contract](docs/ai-orchestration-architecture.md) and its
+[complete labelled integration fixture](docs/examples/coordination-scenario-v1.json).
+The fixture includes one real source row and simulated operational state. It is
+an integration input, not a completed application or live-agent benchmark.
 
 ## Check the references
 

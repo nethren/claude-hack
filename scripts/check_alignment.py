@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check documentary/source alignment; does not test an unbuilt application."""
+import ast
 import csv
 import hashlib
 import json
@@ -19,6 +20,7 @@ required = [
     'docs/multi-agent-design-constraints.md', 'docs/alignment-checklist.md',
     'docs/decision-log.md', 'docs/airbus-track-brief.md', 'docs/source-register.md',
     'docs/data/airlines.md', 'docs/data/airports.md', 'docs/data/flight-scenarios.md',
+    'docs/ai-orchestration-architecture.md', 'docs/examples/coordination-scenario-v1.json',
 ]
 for rel in required:
     if not (ROOT / rel).is_file():
@@ -60,6 +62,9 @@ missing = Counter()
 selected_rows = {}
 scenario_md = (ROOT / 'docs/data/flight-scenarios.md').read_text()
 example_ids = {int(n) for n in re.findall(r'### [^\n]+: CSV row (\d+)', scenario_md)}
+architecture_fixture = json.loads((ROOT / 'docs/examples/coordination-scenario-v1.json').read_text())
+architecture_sources = architecture_fixture['shared']['source_rows']
+architecture_row_ids = {row['csv_row_number'] for row in architecture_sources}
 with (ROOT / f_entry['path']).open(encoding='utf-8-sig', newline='') as stream:
     reader = csv.DictReader(stream)
     if reader.fieldnames != f_entry['columns']:
@@ -81,7 +86,7 @@ with (ROOT / f_entry['path']).open(encoding='utf-8-sig', newline='') as stream:
             counts['unknown_origins'] += 1
         if row['DESTINATION_AIRPORT'] not in lookups.get('airports.csv', set()):
             counts['unknown_destinations'] += 1
-        if row_number in example_ids:
+        if row_number in example_ids | architecture_row_ids:
             selected_rows[row_number] = row
 
 for key in ['weather_gt_15','late_gt_20','qualifying_either','qualifying_both','cancelled','diverted']:
@@ -104,6 +109,16 @@ for row_number in example_ids:
             section = scenario_md.split(f': CSV row {row_number}\n',1)[1].split('\n### ',1)[0]
             if expected not in section:
                 errors.append(f'Example row {row_number} field mismatch: {c}')
+
+for row in architecture_sources:
+    if row['dataset_sha256'] != f_entry['sha256'] or selected_rows.get(row['csv_row_number']) != row['raw']:
+        errors.append(f'Architecture fixture source differs from real CSV row {row["csv_row_number"]}')
+architecture = (ROOT / 'docs/ai-orchestration-architecture.md').read_text()
+for block in re.findall(r'```python\n(.*?)\n```', architecture, re.S):
+    try:
+        ast.parse(block)
+    except SyntaxError as error:
+        errors.append(f'Architecture Python contract syntax: {error}')
 
 # Check relative file links without following network URLs or interpreting source prose.
 md_files = sorted(ROOT.rglob('*.md'))
@@ -151,4 +166,5 @@ if errors:
 print(f'PASS: {len(md_files)} Markdown documents; 5 source hashes; all CSV schemas/counts;')
 print(f'{counts["rows"]:,} qualifying flight rows; lookup joins; complete lookup tables; source-row examples;')
 print('26 requirement IDs; 6 rubric weights totaling 100%; relative links and file hygiene.')
+print('Architecture Python syntax and integration-fixture source provenance checked.')
 print('Application status remains not implemented / not tested.')

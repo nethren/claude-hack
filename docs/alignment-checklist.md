@@ -12,6 +12,11 @@ Source conversion and full-file data inspection are complete. All application
 requirements remain **not implemented / not tested**. Gate/fuel/crew/turbulence/
 connection/separation inputs remain **missing from supplied CSVs**. Flight-row
 selection is **data-ready**, but passing a row through running agents is untested.
+The [protocol 1.0 architecture](ai-orchestration-architecture.md) now defines
+teammate interfaces, role tools, budgets, failure handling and acceptance checks.
+Its [integration fixture](examples/coordination-scenario-v1.json) supplies labelled
+simulated operational state; it does not turn those inputs into observed data
+or establish that application requirements have been implemented.
 
 | Requirement IDs | Data / design dependency | Required evidence | Current state |
 |---|---|---|---|

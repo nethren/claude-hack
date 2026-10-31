@@ -18,6 +18,10 @@ writing implementation plans, implementing behaviour, or preparing a demo:
 4. Read the [multi-agent design constraints](docs/multi-agent-design-constraints.md).
 5. Check the [alignment matrix](docs/alignment-checklist.md) and the
    [decision and assumption log](docs/decision-log.md).
+6. For agent implementation or integration, follow the
+   [AI orchestration architecture and protocol 1.0](docs/ai-orchestration-architecture.md).
+   Keep teammate interfaces, units, message identities and budgets consistent;
+   coordinate shared-contract changes instead of creating divergent role schemas.
 
 Use these files during the decision, not merely as a final checklist. Return to
 the relevant sections when context has been compacted or the proposal changes.
