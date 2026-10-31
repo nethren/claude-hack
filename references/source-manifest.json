@@ -1,0 +1,85 @@
+{
+  "snapshot_date": "2026-10-31",
+  "timezone": "Asia/Singapore",
+  "sources": [
+    {
+      "id": "airlines.csv",
+      "path": "data/raw/airlines.csv",
+      "bytes": 359,
+      "sha256": "ec54f453260c2a46fc76d497ab0eb0a4c13724b566fba8a7ce3bb8ad712acca3",
+      "rows": 14,
+      "columns": [
+        "IATA_CODE",
+        "AIRLINE"
+      ]
+    },
+    {
+      "id": "airports.csv",
+      "path": "data/raw/airports.csv",
+      "bytes": 23867,
+      "sha256": "23c4cea98c318225bd923b2068ead8af089845071f79fd9ea0037ba6a61cd4e2",
+      "rows": 322,
+      "columns": [
+        "IATA_CODE",
+        "AIRPORT",
+        "CITY",
+        "STATE",
+        "COUNTRY",
+        "LATITUDE",
+        "LONGITUDE"
+      ]
+    },
+    {
+      "id": "flights.csv",
+      "path": "data/raw/flights.csv",
+      "bytes": 38616129,
+      "sha256": "bfb7fc2112a1a98b748fa1c5bbba57f6f8f14acbd6419ea4cf84f4470ed5d79e",
+      "rows": 358774,
+      "columns": [
+        "YEAR",
+        "MONTH",
+        "DAY",
+        "DAY_OF_WEEK",
+        "AIRLINE",
+        "FLIGHT_NUMBER",
+        "TAIL_NUMBER",
+        "ORIGIN_AIRPORT",
+        "DESTINATION_AIRPORT",
+        "SCHEDULED_DEPARTURE",
+        "DEPARTURE_TIME",
+        "DEPARTURE_DELAY",
+        "TAXI_OUT",
+        "WHEELS_OFF",
+        "SCHEDULED_TIME",
+        "ELAPSED_TIME",
+        "AIR_TIME",
+        "DISTANCE",
+        "WHEELS_ON",
+        "TAXI_IN",
+        "SCHEDULED_ARRIVAL",
+        "ARRIVAL_TIME",
+        "ARRIVAL_DELAY",
+        "DIVERTED",
+        "CANCELLED",
+        "CANCELLATION_REASON",
+        "AIR_SYSTEM_DELAY",
+        "SECURITY_DELAY",
+        "AIRLINE_DELAY",
+        "LATE_AIRCRAFT_DELAY",
+        "WEATHER_DELAY"
+      ]
+    },
+    {
+      "id": "brief",
+      "path": "references/airbus-track.pdf",
+      "bytes": 393508,
+      "sha256": "540ac5bc79d8ed9906c00da11a5bc215362f4d2e9f9be50590931e1397875a6c"
+    },
+    {
+      "id": "screenshot",
+      "path": "references/challenge-2-screenshot.png",
+      "bytes": 492646,
+      "sha256": "aaa6777d2fddc96d32f3b6d0600ad19e20acf53fb0ddb37cc32b05d00c2d8781"
+    }
+  ]
+}
