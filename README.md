@@ -1,45 +1,84 @@
-# Autonomous SG 2026 - Airbus Challenge #2
+# Groundline: Autonomous SG 2026, Airbus Challenge #2
 
-Multi-agent disruption-coordination prototype for a four-person, six-hour build.
-The `coordinator` branch integrates the published Pilot/Ground agents and a
-compatible reference ATC agent with a tested Python backend. Offline integration
-and mocked-provider tests pass; live LLM performance is not yet evaluated.
+Three independent Claude agents (ATC, Pilot and Ground) negotiate a flight-disruption
+plan in at most two rounds, while Python enforces every safety rule. A deterministic
+coordinator picks among complete plans by a fixed policy, never by vote, and returns one
+of three outcomes for a human controller: **consensus**, a **checked fallback**, or an
+urgent **escalation**. A React dashboard on a DFW airport map runs real agent calls on a
+real 2015 DOT delayed flight and shows each agent's reasoning, the checks behind it and a
+modelled fuel/CO₂ estimate.
 
-## Run the backend
+## How it works
 
-Use Python 3.11+ from this repository root:
+| Part | Uses an LLM for | Code is responsible for |
+|---|---|---|
+| ATC agent | Choosing and explaining among valid plans | Runway windows, wake separation, taxiway blockage, throughput, delay |
+| Pilot agent | Choosing and explaining among valid plans | Fuel reserve after holding, turbulence cap, passenger connections |
+| Ground agent | Choosing and explaining among valid plans | Stand conflicts, crew availability and overtime, turnaround |
+| Coordinator | Nothing | Proposals, reply validation, ranking, deadlines, fallback, evidence log |
 
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.lock
-python app.py --mode offline
-python -m pytest -q
-python -m uvicorn api:app --host 127.0.0.1 --port 8000
-```
+Each agent answers ACCEPT, COUNTER (ranked safe alternatives) or REJECT. A vote that
+accepts a plan failing its own checks, cites a check that does not exist or is malformed
+is rejected in code. Consensus needs all three to accept the same plan plus a final
+re-check. Runs are bounded: at most 2 rounds and 6 model calls, no retries, 40 s.
+Every result is a recommendation for a controller; nothing is executed.
 
-Offline mode exercises the real adapters and checks using scripted model replies;
-it is not a live AI demonstration. For live configuration, API endpoints, frontend
-integration and current limitations, read the [backend handoff](docs/backend.md).
-Evidence and results are saved under ignored `logs/`.
+## Run the demo
 
-## Review the frontend draft
-
-The `codex/frontend-draft` branch adds a React + Vite airport surface dashboard:
-real attributed DFW geometry, moving simulated aircraft, selected routes, agent
-decisions/check evidence and scenario drills. From this branch:
+Python 3.11+ and Node 20.19+/22.12+, from the repository root:
 
 ```sh
-cd frontend
-npm ci
-npm run dev
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements.lock   # macOS/Linux: .venv/bin/python
+.venv/Scripts/python -m dev.serve --live                   # live Claude agents
+cd frontend && npm ci && npm run dev                        # in a second terminal
 ```
 
-Open Vite's local URL. Recorded mode works without the Python server. Connection
-settings can use the existing local backend. This is an interactive review draft;
-scripted replay, simulated operating state and illustrative geographic routing
-are explicit. Read [frontend setup](frontend/README.md) and
-[review/alignment notes](docs/frontend-review.md).
+Live mode reads `ANTHROPIC_API_KEY` from the environment or a git-ignored `.env`
+(see [.env.example](.env.example)); drop `--live` to run offline test agents with no key.
+Open the Vite URL, choose a scenario and click **Run scenario**.
+
+| Scenario | Situation | Outcome |
+|---|---|---|
+| All clear | The proposed plan already fits runway spacing, fuel and stands | Consensus in round 1 |
+| Counteroffer | 2 min arrival gap (3 min required) and a shared stand | Agents counter; coordinator proposes P1; consensus in round 2 (fallback if a live agent times out) |
+| Runway closed | Runway closed until +45 min; every plan lands earlier | Escalated: urgent controller alert with fuel deadlines |
+
+All three reached these outcomes with live Claude agents on 31 Oct 2026. Flight identity
+is real (CSV row 76); fuel, stands, crews and runway state are simulated and labelled.
+
+## Test
+
+```sh
+.venv/Scripts/python -m pytest -q           # 206 backend tests
+cd frontend && npm test && npm run build    # 24 frontend tests + build
+.venv/Scripts/python scripts/check_alignment.py
+```
+
+The alignment check verifies source hashes, schemas, row counts, disruption eligibility,
+lookup joins, Markdown links and requirement coverage.
+
+## Project layout
+
+| Path | Contents |
+|---|---|
+| `agents/`, `domains/` | ATC, Pilot and Ground LLM adapters and their deterministic checkers |
+| `runtime/` | Coordinator, model gateway, scenario loader, demo scenarios, event log |
+| `contracts/` | Shared protocol 1.0 types |
+| `analysis/` | Fuel/CO₂ modelled estimate |
+| `api.py`, `api_fuel.py`, `app.py` | FastAPI backend (with fuel panel) and CLI |
+| `frontend/` | React + Vite dashboard ([setup](frontend/README.md)) |
+| `dev/serve.py` | Starts the backend offline or live |
+| `tests/` | Backend test suite |
+| `docs/`, `data/raw/`, `references/` | Requirements, design, decisions, source data and the original brief |
+
+## Known limits
+
+Agents choose from a bounded catalog of plans, so an escalation does not prove no
+feasible plan exists. Fuel is a holding-only model. The ranking order is a prototype
+policy, not an aviation standard. The Pilot agent can exceed the 15 s per-call limit in
+round 2, which ends the run in a safe fallback. See [backend notes](docs/backend.md) and
+the [decision log](docs/decision-log.md).
 
 ## Start here
 
@@ -80,19 +119,3 @@ Readable complete lookup tables are available for
 [Flight examples](docs/data/flight-scenarios.md) preserve selected complete source
 rows and identify their original CSV row numbers. The full flights CSV is kept
 as the lossless source rather than duplicated into a very large Markdown table.
-
-For teammate implementation, start with the
-[architecture and shared contract](docs/ai-orchestration-architecture.md) and its
-[complete labelled integration fixture](docs/examples/coordination-scenario-v1.json).
-The fixture includes one real source row and simulated operational state. The
-backend suite runs it end to end; it is not a live-agent benchmark.
-
-## Check the references
-
-```sh
-python3 scripts/check_alignment.py
-```
-
-Python's standard library is sufficient. The check verifies source hashes,
-schemas, row counts, disruption eligibility, lookup joins, Markdown links and
-requirement coverage. It does not establish that the intended system is built.
